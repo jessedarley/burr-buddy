@@ -27,21 +27,29 @@ export default async function handler(req, res) {
       return json(res, 409, { error: 'A reply has already been submitted for this token.' })
     }
 
-    await sendReplyEmail({
-      to: record.senderEmail,
-      token: record.token,
-      emoji: record.emoji,
-      senderMessage: record.senderMessage,
-      receiverReply: reply,
-    })
-
     const repliedAt = new Date().toISOString()
     const changes = markReply(token, reply, repliedAt)
     if (changes === 0) {
       return json(res, 409, { error: 'A reply has already been submitted for this token.' })
     }
 
-    return json(res, 200, { ok: true, repliedAt })
+    let emailStatus = 'skipped'
+    if (record.senderEmail) {
+      try {
+        await sendReplyEmail({
+          to: record.senderEmail,
+          token: record.token,
+          printShape: record.emoji,
+          senderMessage: record.senderMessage,
+          receiverReply: reply,
+        })
+        emailStatus = 'sent'
+      } catch {
+        emailStatus = 'failed'
+      }
+    }
+
+    return json(res, 200, { ok: true, repliedAt, emailStatus })
   } catch (error) {
     return json(res, 500, { error: error.message || 'Internal server error.' })
   }

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { BrandHeader } from '../components/BrandHeader'
+import { getPrintShapeLabel } from '../lib/printShapes'
 
 export function ReceiverPage() {
   const { token } = useParams()
@@ -69,29 +71,42 @@ export function ReceiverPage() {
   return (
     <main className="page">
       <div className="container panel">
-        <h1>Open Burr Buddy Message</h1>
-        {isLoading ? <p>Loading...</p> : null}
+        <BrandHeader />
+        <section className="hero">
+          <h1 className="hero-title">Your Secret Message (Shh!)</h1>
+          <p className="hero-lead">Read your note below, then leave a reply for the sender.</p>
+        </section>
+
+        {isLoading ? <p className="status">Loading...</p> : null}
         {error ? <div className="message error">{error}</div> : null}
 
         {messageData ? (
           <>
-            <p className="emoji-view">{messageData.emoji}</p>
-            <div className="sender-message">{messageData.senderMessage}</div>
-            <form onSubmit={handleSubmit}>
-              <div className="field">
-                <label htmlFor="reply">Your Reply</label>
-                <textarea
-                  id="reply"
-                  value={reply}
-                  onChange={(event) => setReply(event.target.value)}
-                  required
-                />
-              </div>
-              <button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Sending...' : 'Send Reply'}
-              </button>
-            </form>
-            {submitState ? <div className="message success">{submitState}</div> : null}
+            <section className="section-card">
+              <h2 className="section-title">Step 1: Read</h2>
+              <p className="meta">3D Print Shape</p>
+              <p className="token-url">{getPrintShapeLabel(messageData.printShape)}</p>
+              <div className="sender-message">{messageData.senderMessage}</div>
+            </section>
+
+            <section className="section-card">
+              <h2 className="section-title">Step 2: Reply</h2>
+              <form onSubmit={handleSubmit}>
+                <div className="field">
+                  <label htmlFor="reply">Your Reply</label>
+                  <textarea
+                    id="reply"
+                    value={reply}
+                    onChange={(event) => setReply(event.target.value)}
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Sending Reply...' : 'Send Reply'}
+                </button>
+              </form>
+            </section>
+            {submitState ? <div className="message success">Reply delivered. You are all set.</div> : null}
           </>
         ) : null}
       </div>

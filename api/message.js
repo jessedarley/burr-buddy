@@ -18,7 +18,7 @@ export default function handler(req, res) {
 
   return json(res, 200, {
     token: record.token,
-    emoji: record.emoji,
+    printShape: record.emoji,
     senderMessage: record.senderMessage,
     createdAt: record.createdAt,
     repliedAt: record.repliedAt,

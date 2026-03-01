@@ -1,17 +1,10 @@
-import { useMemo, useState } from 'react'
-import { downloadTokenPlaqueStl } from '../lib/stl'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import { BrandHeader } from '../components/BrandHeader'
+import { PRINT_SHAPE_OPTIONS } from '../lib/printShapes'
 
-const EMOJI_OPTIONS = [
-  '\u{1F32F}',
-  '\u2764\uFE0F',
-  '\u{1F525}',
-  '\u2728',
-  '\u{1F389}',
-  '\u{1F32E}',
-  '\u{1F340}',
-  '\u{1F308}',
-  '\u{1F4AB}',
-]
+const StlViewer = lazy(() =>
+  import('../components/StlViewer').then((module) => ({ default: module.StlViewer })),
+)
 
 function getBaseUrl() {
   if (typeof window === 'undefined') return ''
@@ -21,12 +14,14 @@ function getBaseUrl() {
 export function CreatePage() {
   const [formData, setFormData] = useState({
     senderMessage: '',
-    emoji: EMOJI_OPTIONS[0],
-    senderEmail: '',
+    printShape: PRINT_SHAPE_OPTIONS[0].value,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [createdToken, setCreatedToken] = useState('')
+  const [createdShape, setCreatedShape] = useState(PRINT_SHAPE_OPTIONS[0].value)
+  const [printSizeText, setPrintSizeText] = useState('')
+  const [isStlReady, setIsStlReady] = useState(false)
 
   const shareUrl = useMemo(() => {
     if (!createdToken) return ''
@@ -37,6 +32,29 @@ export function CreatePage() {
     if (!createdToken || typeof window === 'undefined') return ''
     return `${window.location.host}/r/${createdToken}`
   }, [createdToken])
+
+  useEffect(() => {
+    let mounted = true
+    if (!createdToken) return undefined
+
+    ;(async () => {
+      try {
+        const { getPrintSizeInches } = await import('../lib/stl')
+        const size = getPrintSizeInches(createdShape)
+        if (mounted) {
+          setPrintSizeText(`${size.widthIn}" W x ${size.heightIn}" H x ${size.thicknessIn}" T`)
+        }
+      } catch {
+        if (mounted) {
+          setPrintSizeText('2.00" W x 2.00" H x 0.125" T')
+        }
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [createdShape, createdToken])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -56,6 +74,9 @@ export function CreatePage() {
       }
 
       setCreatedToken(payload.token)
+      setCreatedShape(payload.printShape || formData.printShape)
+      setPrintSizeText('')
+      setIsStlReady(false)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -67,40 +88,89 @@ export function CreatePage() {
     return (
       <main className="page">
         <div className="container panel">
-          <h1>Share Link Created</h1>
-          <p className="subtle">
-            Send this URL to the receiver and keep the token plaque for the physical flow.
-          </p>
-          <p className="meta">Unique URL:</p>
-          <p className="token-url">{shareUrl}</p>
-          <p className="meta">Short type-in URL:</p>
-          <p className="token-url">{typeableUrl}</p>
-          <p className="meta">Typeable token code:</p>
-          <p className="token-url">{createdToken}</p>
-          <p className="subtle">
-            Typing note: suffix uses an ambiguity-safe alphabet (no 0/O or 1/l).
-          </p>
-          <div className="row">
-            <button
-              type="button"
-              onClick={async () => {
-                await navigator.clipboard.writeText(shareUrl)
-              }}
-            >
-              Copy Link
-            </button>
-            <button type="button" onClick={() => downloadTokenPlaqueStl(createdToken)}>
-              Download STL
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setCreatedToken('')
-                setFormData({ senderMessage: '', emoji: EMOJI_OPTIONS[0], senderEmail: '' })
-              }}
-            >
-              Create Another
-            </button>
+          <BrandHeader />
+          <section className="hero">
+            <h1 className="hero-title">
+              {isStlReady ? 'Your Burr Buddy is ready' : 'We are making your STL file'}
+            </h1>
+            <p className="hero-lead">
+              Confirm the shape and download the STL for 3D printing.
+            </p>
+          </section>
+
+          <section className="section-card">
+            <h2 className="section-title">Preview and Download STL</h2>
+            <div className="field">
+              <label htmlFor="previewShape">3D Print Shape</label>
+              <select
+                id="previewShape"
+                value={createdShape}
+                onChange={(event) => setCreatedShape(event.target.value)}
+              >
+                {PRINT_SHAPE_OPTIONS.map((shape) => (
+                  <option key={shape.value} value={shape.value}>
+                    {shape.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Suspense fallback={<p className="status">Loading STL preview...</p>}>
+              <StlViewer
+                token={createdToken}
+                printShape={createdShape}
+                qrPayload={shareUrl}
+                onReady={() => setIsStlReady(true)}
+              />
+            </Suspense>
+            <p className="note">Drag to rotate and scroll to zoom.</p>
+          </section>
+
+          <div className="action-row">
+            <div className="action-item">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(shareUrl)
+                }}
+              >
+                Copy Receiver URL
+              </button>
+              <p className="action-note">{typeableUrl}</p>
+            </div>
+            <div className="action-item">
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!isStlReady}
+                onClick={async () => {
+                  if (!isStlReady) return
+                  const { downloadTokenPlaqueStl } = await import('../lib/stl')
+                  downloadTokenPlaqueStl(createdToken, createdShape, shareUrl)
+                }}
+              >
+                {isStlReady ? 'Download STL for Print' : 'Working...'}
+              </button>
+              <p className="action-note">Print size: {printSizeText || 'Calculating...'}</p>
+            </div>
+            <div className="action-item">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setCreatedToken('')
+                  setCreatedShape(PRINT_SHAPE_OPTIONS[0].value)
+                  setPrintSizeText('')
+                  setIsStlReady(false)
+                  setFormData({
+                    senderMessage: '',
+                    printShape: PRINT_SHAPE_OPTIONS[0].value,
+                  })
+                }}
+              >
+                Start New Message
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -110,58 +180,54 @@ export function CreatePage() {
   return (
     <main className="page">
       <div className="container panel">
-        <h1>Create Burr Buddy Link</h1>
-        <p className="subtle">
-          Enter your message, pick an emoji, and submit to generate a unique receiver URL.
-        </p>
+        <BrandHeader />
+        <section className="hero">
+          <h1 className="hero-title">Write Your Secret Message</h1>
+          <p className="hero-lead">
+            Compose a note, pick a print shape, and generate a shareable link plus printable STL.
+          </p>
+        </section>
 
         {error ? <div className="message error">{error}</div> : null}
 
         <form onSubmit={handleSubmit}>
-          <div className="field">
-            <label htmlFor="senderMessage">Message</label>
-            <textarea
-              id="senderMessage"
-              value={formData.senderMessage}
-              onChange={(event) =>
-                setFormData((prev) => ({ ...prev, senderMessage: event.target.value }))
-              }
-              required
-            />
-          </div>
-
-          <div className="row">
+          <section className="section-card">
+            <h2 className="section-title">Step 1: Message</h2>
             <div className="field">
-              <label htmlFor="emoji">Emoji</label>
-              <select
-                id="emoji"
-                value={formData.emoji}
-                onChange={(event) => setFormData((prev) => ({ ...prev, emoji: event.target.value }))}
-              >
-                {EMOJI_OPTIONS.map((emoji) => (
-                  <option key={emoji} value={emoji}>
-                    {emoji}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field">
-              <label htmlFor="senderEmail">Sender Email</label>
-              <input
-                id="senderEmail"
-                type="email"
-                value={formData.senderEmail}
+              <label htmlFor="senderMessage">Message</label>
+              <textarea
+                id="senderMessage"
+                value={formData.senderMessage}
                 onChange={(event) =>
-                  setFormData((prev) => ({ ...prev, senderEmail: event.target.value }))
+                  setFormData((prev) => ({ ...prev, senderMessage: event.target.value }))
                 }
                 required
               />
             </div>
-          </div>
+          </section>
 
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'Create Link'}
+          <section className="section-card">
+            <h2 className="section-title">Step 2: 3D Print Shape</h2>
+            <div className="field">
+              <label htmlFor="printShape">Shape</label>
+              <select
+                id="printShape"
+                value={formData.printShape}
+                onChange={(event) =>
+                  setFormData((prev) => ({ ...prev, printShape: event.target.value }))
+                }
+              >
+                {PRINT_SHAPE_OPTIONS.map((shape) => (
+                  <option key={shape.value} value={shape.value}>
+                    {shape.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </section>
+
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? 'Generating Link...' : 'Generate Link + STL Preview'}
           </button>
         </form>
       </div>

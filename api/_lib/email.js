@@ -45,13 +45,13 @@ async function sendWithSendGrid({ to, subject, text }) {
   return true
 }
 
-export async function sendReplyEmail({ to, token, emoji, senderMessage, receiverReply }) {
+export async function sendReplyEmail({ to, token, printShape, senderMessage, receiverReply }) {
   const subject = `Burr Buddy reply for token ${token}`
   const text = [
     'You received a new Burr Buddy reply.',
     '',
     `Token: ${token}`,
-    `Emoji: ${emoji}`,
+    `3D print shape: ${printShape}`,
     '',
     'Original message:',
     senderMessage,

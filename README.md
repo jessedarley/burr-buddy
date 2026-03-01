@@ -2,23 +2,23 @@
 
 Two-user sender/receiver flow:
 
-- `/create`: sender enters message, emoji, sender email, then creates a tokenized link.
+- `/create`: sender enters message and selects a 3D print shape, then creates a tokenized link.
 - `/r/:token`: short receiver URL for typing from the printed token.
 - `/p/:token`: receiver URL alias (also works).
-- `POST /api/reply`: stores reply and emails it to sender via Resend or SendGrid.
-- STL export: sender can download a printable plaque with token text debossed.
+- `POST /api/reply`: stores reply. Email send is optional and only runs when a sender email exists.
+- STL export: sender can download a printable ~2 inch (50.8 mm) shape plaque with debossed QR code.
 
 ## API Routes
 
 - `POST /api/create`
-  - body: `{ senderMessage, emoji, senderEmail }`
-  - returns: `{ token }`
+  - body: `{ senderMessage, printShape }`
+  - returns: `{ token, printShape }`
   - token format: `word-word-word-suffix` (example: `mint-lake-star-7k2q9v`)
 - `GET /api/message?token=...`
-  - returns: `{ token, emoji, senderMessage, createdAt, repliedAt }`
+  - returns: `{ token, printShape, senderMessage, createdAt, repliedAt }`
 - `POST /api/reply`
   - body: `{ token, reply }`
-  - returns: `{ ok: true, repliedAt }`
+  - returns: `{ ok: true, repliedAt, emailStatus }`
 
 ## Storage
 
@@ -27,7 +27,7 @@ SQLite table (`messages`) with schema:
 - `token` (PK)
 - `senderEmail`
 - `senderMessage`
-- `emoji`
+- `emoji` (legacy column used to store `printShape`)
 - `createdAt`
 - `receiverReply`
 - `repliedAt`
@@ -37,7 +37,7 @@ Override path with `BURR_BUDDY_DB_PATH`.
 
 ## Email Configuration
 
-Set one provider:
+Optional, only needed if you later collect sender email and want outgoing reply emails:
 
 - `RESEND_API_KEY` (preferred)
 - or `SENDGRID_API_KEY`
