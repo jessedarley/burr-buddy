@@ -17,6 +17,15 @@ const memoryStore = new Map()
 let postgresClient = null
 let postgresInitPromise = null
 
+function getPostgresUrl() {
+  return (
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    ''
+  ).trim()
+}
+
 function getDbPath() {
   if (process.env.BURR_BUDDY_DB_PATH) return process.env.BURR_BUDDY_DB_PATH
   if (process.env.VERCEL) return path.join(os.tmpdir(), 'burrbuddy.sqlite')
@@ -76,13 +85,14 @@ function toRecord(row) {
 }
 
 async function getPostgresClient() {
-  if (!process.env.DATABASE_URL) return null
+  const postgresUrl = getPostgresUrl()
+  if (!postgresUrl) return null
   if (postgresClient) return postgresClient
   if (postgresInitPromise) return postgresInitPromise
 
   postgresInitPromise = import('postgres')
     .then(async ({ default: postgres }) => {
-      const client = postgres(process.env.DATABASE_URL, {
+      const client = postgres(postgresUrl, {
         max: 1,
         prepare: false,
         ssl: process.env.NODE_ENV === 'production' ? 'require' : undefined,
