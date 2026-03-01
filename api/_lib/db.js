@@ -14,6 +14,8 @@ try {
 let db
 let usingMemoryStore = false
 const memoryStore = new Map()
+let postgresClient = null
+let postgresInitPromise = null
 
 function getDbPath() {
   if (process.env.BURR_BUDDY_DB_PATH) return process.env.BURR_BUDDY_DB_PATH
@@ -39,7 +41,7 @@ function initDb(database) {
   `)
 }
 
-export function getDb() {
+function getDb() {
   if (usingMemoryStore) return null
   if (!db) {
     if (!DatabaseSync) {
@@ -60,7 +62,60 @@ export function getDb() {
   return db
 }
 
-export function insertMessageRecord(record) {
+function toRecord(row) {
+  if (!row) return null
+  return {
+    token: row.token,
+    senderEmail: row.senderEmail,
+    senderMessage: row.senderMessage,
+    emoji: row.emoji,
+    createdAt: row.createdAt,
+    receiverReply: row.receiverReply,
+    repliedAt: row.repliedAt,
+  }
+}
+
+async function getPostgresClient() {
+  if (!process.env.DATABASE_URL) return null
+  if (postgresClient) return postgresClient
+  if (postgresInitPromise) return postgresInitPromise
+
+  postgresInitPromise = import('postgres')
+    .then(async ({ default: postgres }) => {
+      const client = postgres(process.env.DATABASE_URL, {
+        max: 1,
+        prepare: false,
+        ssl: process.env.NODE_ENV === 'production' ? 'require' : undefined,
+      })
+      await client`
+        CREATE TABLE IF NOT EXISTS messages (
+          "token" TEXT PRIMARY KEY,
+          "senderEmail" TEXT NOT NULL,
+          "senderMessage" TEXT NOT NULL,
+          "emoji" TEXT NOT NULL,
+          "createdAt" TEXT NOT NULL,
+          "receiverReply" TEXT,
+          "repliedAt" TEXT
+        )
+      `
+      postgresClient = client
+      return postgresClient
+    })
+    .catch(() => null)
+
+  return postgresInitPromise
+}
+
+export async function insertMessageRecord(record) {
+  const pg = await getPostgresClient()
+  if (pg) {
+    await pg`
+      INSERT INTO messages ("token", "senderEmail", "senderMessage", "emoji", "createdAt")
+      VALUES (${record.token}, ${record.senderEmail}, ${record.senderMessage}, ${record.emoji}, ${record.createdAt})
+    `
+    return
+  }
+
   const database = getDb()
   if (!database) {
     memoryStore.set(record.token, {
@@ -81,7 +136,18 @@ export function insertMessageRecord(record) {
   statement.run(record.token, record.senderEmail, record.senderMessage, record.emoji, record.createdAt)
 }
 
-export function getMessageRecordByToken(token) {
+export async function getMessageRecordByToken(token) {
+  const pg = await getPostgresClient()
+  if (pg) {
+    const rows = await pg`
+      SELECT "token", "senderEmail", "senderMessage", "emoji", "createdAt", "receiverReply", "repliedAt"
+      FROM messages
+      WHERE "token" = ${token}
+      LIMIT 1
+    `
+    return toRecord(rows[0])
+  }
+
   const database = getDb()
   if (!database) {
     return memoryStore.get(token) || null
@@ -91,10 +157,21 @@ export function getMessageRecordByToken(token) {
     FROM messages
     WHERE token = ?
   `)
-  return statement.get(token)
+  return toRecord(statement.get(token))
 }
 
-export function markReply(token, reply, repliedAt) {
+export async function markReply(token, reply, repliedAt) {
+  const pg = await getPostgresClient()
+  if (pg) {
+    const rows = await pg`
+      UPDATE messages
+      SET "receiverReply" = ${reply}, "repliedAt" = ${repliedAt}
+      WHERE "token" = ${token} AND "receiverReply" IS NULL
+      RETURNING "token"
+    `
+    return rows.length
+  }
+
   const database = getDb()
   if (!database) {
     const existing = memoryStore.get(token)

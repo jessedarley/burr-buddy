@@ -19,7 +19,7 @@ export default async function handler(req, res) {
       return json(res, 400, { error: 'reply is required.' })
     }
 
-    const record = getMessageRecordByToken(token)
+    const record = await getMessageRecordByToken(token)
     if (!record) {
       return json(res, 404, { error: 'Message not found.' })
     }
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     }
 
     const repliedAt = new Date().toISOString()
-    const changes = markReply(token, reply, repliedAt)
+    const changes = await markReply(token, reply, repliedAt)
     if (changes === 0) {
       return json(res, 409, { error: 'A reply has already been submitted for this token.' })
     }

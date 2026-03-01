@@ -6,7 +6,7 @@ import { generateFriendlyToken } from './_lib/token.js'
 async function generateUniqueToken() {
   for (let attempts = 0; attempts < 8; attempts += 1) {
     const token = generateFriendlyToken()
-    const existing = getMessageRecordByToken(token)
+    const existing = await getMessageRecordByToken(token)
     if (!existing) return token
   }
   throw new Error('Could not generate a unique token.')
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     const token = await generateUniqueToken()
     const createdAt = new Date().toISOString()
 
-    insertMessageRecord({
+    await insertMessageRecord({
       token,
       senderEmail,
       senderMessage,

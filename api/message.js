@@ -1,7 +1,7 @@
 import { getMessageRecordByToken } from './_lib/db.js'
 import { getQueryParam, json } from './_lib/http.js'
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return json(res, 405, { error: 'Method not allowed' })
   }
@@ -11,7 +11,7 @@ export default function handler(req, res) {
     return json(res, 400, { error: 'token is required.' })
   }
 
-  const record = getMessageRecordByToken(token)
+  const record = await getMessageRecordByToken(token)
   if (!record) {
     return json(res, 404, { error: 'Message not found.' })
   }
