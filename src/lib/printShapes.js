@@ -3,6 +3,8 @@ export const PRINT_SHAPE_OPTIONS = [
   { value: 'heart', label: 'Heart' },
   { value: 'hexagon', label: 'Hexagon' },
   { value: 'star', label: 'Star' },
+  { value: 'gift', label: 'Gift' },
+  { value: 'icecream', label: 'Ice Cream Cone' },
 ]
 
 export const PRINT_SHAPE_VALUES = PRINT_SHAPE_OPTIONS.map((option) => option.value)

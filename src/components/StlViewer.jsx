@@ -2,16 +2,12 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
-import {
-  createBackTextOverlayGeometry,
-  createQrOverlayGeometry,
-  generateTokenPlaqueStl,
-} from '../lib/stl'
+import { createQrOverlayGeometry, generateTokenPlaqueStl } from '../lib/stl'
 
 export function StlViewer({ token, printShape, qrPayload, onReady }) {
   const containerRef = useRef(null)
   const stlContent = useMemo(
-    () => generateTokenPlaqueStl(token, printShape, qrPayload),
+    () => generateTokenPlaqueStl(token, printShape, qrPayload, { includeBackDeboss: false }),
     [token, printShape, qrPayload],
   )
 
@@ -90,21 +86,6 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
     qrOverlay.position.z = 0
     mesh.add(qrOverlay)
 
-    const backTextOverlayGeometry = createBackTextOverlayGeometry(printShape)
-    let backTextOverlay = null
-    let backTextOverlayMaterial = null
-    if (backTextOverlayGeometry) {
-      backTextOverlayMaterial = new THREE.MeshStandardMaterial({
-        color: '#111111',
-        roughness: 0.95,
-        metalness: 0.0,
-        polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1,
-      })
-      backTextOverlay = new THREE.Mesh(backTextOverlayGeometry, backTextOverlayMaterial)
-      mesh.add(backTextOverlay)
-    }
     onReady?.()
 
     let frameId = 0
@@ -132,8 +113,6 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
       material.dispose()
       qrOverlayGeometry.dispose()
       qrOverlayMaterial.dispose()
-      if (backTextOverlayGeometry) backTextOverlayGeometry.dispose()
-      if (backTextOverlayMaterial) backTextOverlayMaterial.dispose()
       renderer.dispose()
     }
   }, [onReady, printShape, qrPayload, stlContent, token])

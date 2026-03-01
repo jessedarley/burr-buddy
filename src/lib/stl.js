@@ -5,6 +5,9 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import qrcode from 'qrcode-generator'
 import { CSG } from 'three-csg-ts'
 import heartSvgRaw from '../assets/heart.svg?raw'
+import giftSvgRaw from '../assets/giftbox.svg?raw'
+import iceCreamConeSvgRaw from '../assets/ice-cream-cone.svg?raw'
+import burrBuddyDebossSvgRaw from '../assets/burr-buddy-deboss.svg?raw'
 
 const TARGET_DIAMETER_MM = 50.8
 const MIN_QR_SIDE_MM = 0
@@ -15,9 +18,16 @@ const HOLE_EDGE_CLEARANCE_MM = 5.08
 const HEART_HOLE_EDGE_CLEARANCE_MM = HOLE_DIAMETER_MM
 export const BASE_THICKNESS_MM = 3.175
 export const DEBOSS_DEPTH_MM = 0.7
-const BACK_TEXT_DEBOSS_DEPTH_MM = 0.8
-const CURVE_SEGMENTS = 72
+const BACK_TEXT_DEBOSS_DEPTH_MM = 1.0
+const BACK_DEBOSS_SAMPLE_POINTS = 120
+const CURVE_SEGMENTS = 48
+const HEART_SVG_SAMPLE_POINTS = 220
+const LAYOUT_SAMPLE_POINTS = 220
 let cachedHeartUnitWidthPoints = null
+let cachedGiftUnitContours = null
+let cachedIceCreamUnitContours = null
+let cachedBackDebossUnitContours = null
+const centeredLayoutCache = new Map()
 
 function regularPolygon(sides, radius, rotation = 0) {
   const points = []
@@ -46,43 +56,276 @@ function polygonArea(points) {
   return Math.abs(area / 2)
 }
 
-function getHeartSvgShape(targetWidthMm) {
-  if (!cachedHeartUnitWidthPoints) {
-    const loader = new SVGLoader()
-    const data = loader.parse(heartSvgRaw)
-    let bestPoints = null
+function simplifyContour(points, duplicateEpsilon = 1e-4, collinearEpsilon = 1e-5) {
+  if (!points || points.length < 3) return points || []
+
+  const deduped = []
+  for (const p of points) {
+    const prev = deduped[deduped.length - 1]
+    if (!prev || p.distanceToSquared(prev) > duplicateEpsilon * duplicateEpsilon) {
+      deduped.push(new THREE.Vector2(p.x, p.y))
+    }
+  }
+
+  if (deduped.length > 2) {
+    const first = deduped[0]
+    const last = deduped[deduped.length - 1]
+    if (first.distanceToSquared(last) <= duplicateEpsilon * duplicateEpsilon) {
+      deduped.pop()
+    }
+  }
+
+  if (deduped.length < 3) return deduped
+
+  const simplified = []
+  for (let i = 0; i < deduped.length; i += 1) {
+    const prev = deduped[(i - 1 + deduped.length) % deduped.length]
+    const curr = deduped[i]
+    const next = deduped[(i + 1) % deduped.length]
+    const ax = curr.x - prev.x
+    const ay = curr.y - prev.y
+    const bx = next.x - curr.x
+    const by = next.y - curr.y
+    const cross = Math.abs(ax * by - ay * bx)
+    if (cross > collinearEpsilon) simplified.push(curr)
+  }
+
+  return simplified.length >= 3 ? simplified : deduped
+}
+
+function polygonCentroid(points) {
+  if (points.length === 0) return new THREE.Vector2(0, 0)
+  let x = 0
+  let y = 0
+  for (const p of points) {
+    x += p.x
+    y += p.y
+  }
+  return new THREE.Vector2(x / points.length, y / points.length)
+}
+
+function insetPolygon(points, scale = 0.96) {
+  const center = polygonCentroid(points)
+  return points.map(
+    (p) => new THREE.Vector2(center.x + (p.x - center.x) * scale, center.y + (p.y - center.y) * scale),
+  )
+}
+
+function parseLargestSvgShapeUnitWidthPoints(svgRaw, samplePoints) {
+  const loader = new SVGLoader()
+  const data = loader.parse(svgRaw)
+  let bestPoints = null
+  let bestArea = -1
+
+  data.paths.forEach((path) => {
+    const shapes = SVGLoader.createShapes(path)
+    shapes.forEach((shape) => {
+      const points = shape.extractPoints(samplePoints).shape
+      if (points.length < 3) return
+      const area = polygonArea(points)
+      if (area > bestArea) {
+        bestArea = area
+        bestPoints = points
+      }
+    })
+  })
+
+  if (!bestPoints) return null
+
+  const box = new THREE.Box2().setFromPoints(bestPoints)
+  const width = box.max.x - box.min.x
+  const centerX = (box.min.x + box.max.x) / 2
+  const centerY = (box.min.y + box.max.y) / 2
+  return bestPoints.map(
+    (point) => new THREE.Vector2((point.x - centerX) / width, (centerY - point.y) / width),
+  )
+}
+
+function parseLargestSvgShapeUnitWidthContours(svgRaw, samplePoints) {
+  const loader = new SVGLoader()
+  const data = loader.parse(svgRaw)
+  let bestExtracted = null
+  let bestArea = -1
+
+  data.paths.forEach((path) => {
+    const shapes = SVGLoader.createShapes(path)
+    shapes.forEach((shape) => {
+      const extracted = shape.extractPoints(samplePoints)
+      const points = extracted.shape
+      if (points.length < 3) return
+      const area = polygonArea(points)
+      if (area > bestArea) {
+        bestArea = area
+        bestExtracted = extracted
+      }
+    })
+  })
+
+  if (!bestExtracted) return null
+
+  const outer = simplifyContour(bestExtracted.shape)
+  if (outer.length < 3) return null
+  const box = new THREE.Box2().setFromPoints(outer)
+  const width = box.max.x - box.min.x
+  const centerX = (box.min.x + box.max.x) / 2
+  const centerY = (box.min.y + box.max.y) / 2
+
+  const normalize = (points) =>
+    points.map((point) => new THREE.Vector2((point.x - centerX) / width, (centerY - point.y) / width))
+
+  return {
+    outer: normalize(outer),
+    holes: bestExtracted.holes
+      .map((hole) => simplifyContour(hole))
+      .filter((hole) => hole.length >= 3)
+      .map((hole) => normalize(hole)),
+  }
+}
+
+function parseAllSvgShapesUnitWidthContours(svgRaw, samplePoints) {
+  const loader = new SVGLoader()
+  const data = loader.parse(svgRaw)
+  const contours = []
+  const allOuterPoints = []
+
+  data.paths.forEach((path) => {
+    const shapes = SVGLoader.createShapes(path)
+    shapes.forEach((shape) => {
+      const extracted = shape.extractPoints(samplePoints)
+      const outer = simplifyContour(extracted.shape, 3e-4, 3e-4)
+      if (outer.length < 3) return
+      if (polygonArea(outer) < 0.03) return
+      const holes = extracted.holes
+        .map((hole) => simplifyContour(hole, 3e-4, 3e-4))
+        .filter((hole) => hole.length >= 3 && polygonArea(hole) >= 0.02)
+      contours.push({ outer, holes })
+      allOuterPoints.push(...outer)
+    })
+  })
+
+  if (contours.length === 0 || allOuterPoints.length < 3) return null
+
+  const box = new THREE.Box2().setFromPoints(allOuterPoints)
+  const width = box.max.x - box.min.x
+  const centerX = (box.min.x + box.max.x) / 2
+  const centerY = (box.min.y + box.max.y) / 2
+
+  const normalize = (points) =>
+    points.map((point) => new THREE.Vector2((point.x - centerX) / width, (centerY - point.y) / width))
+
+  const normalized = contours.map((entry) => ({
+    outer: normalize(entry.outer),
+    holes: entry.holes.map((hole) => normalize(hole)),
+  }))
+  const normalizedOuterPoints = normalized.flatMap((entry) => entry.outer)
+  const normalizedBox = new THREE.Box2().setFromPoints(normalizedOuterPoints)
+  return { contours: normalized, box: normalizedBox }
+}
+
+function parseDebossUnitContours(svgRaw, samplePoints) {
+  const loader = new SVGLoader()
+  const data = loader.parse(svgRaw)
+  const contours = []
+  const allOuterPoints = []
+
+  data.paths.forEach((path) => {
+    const shapes = SVGLoader.createShapes(path)
+    let bestOuter = null
     let bestArea = -1
 
-    data.paths.forEach((path) => {
-      const shapes = SVGLoader.createShapes(path)
-      shapes.forEach((shape) => {
-        const points = shape.extractPoints(400).shape
-        if (points.length < 3) return
-        const area = polygonArea(points)
-        if (area > bestArea) {
-          bestArea = area
-          bestPoints = points
-        }
-      })
+    shapes.forEach((shape) => {
+      const extracted = shape.extractPoints(samplePoints)
+      const outer = simplifyContour(extracted.shape, 2e-4, 2e-4)
+      if (outer.length < 3) return
+      const area = polygonArea(outer)
+      if (area > bestArea) {
+        bestArea = area
+        bestOuter = outer
+      }
     })
 
-    if (!bestPoints) {
+    if (bestOuter && bestArea >= 0.02) {
+      contours.push({ outer: bestOuter, holes: [] })
+      allOuterPoints.push(...bestOuter)
+    }
+  })
+
+  if (contours.length === 0 || allOuterPoints.length < 3) return null
+
+  const box = new THREE.Box2().setFromPoints(allOuterPoints)
+  const width = box.max.x - box.min.x
+  const centerX = (box.min.x + box.max.x) / 2
+  const centerY = (box.min.y + box.max.y) / 2
+  const normalize = (points) =>
+    points.map((point) => new THREE.Vector2((point.x - centerX) / width, (centerY - point.y) / width))
+
+  const normalized = contours.map((entry) => ({
+    outer: normalize(entry.outer),
+    holes: entry.holes,
+  }))
+  const normalizedOuterPoints = normalized.flatMap((entry) => entry.outer)
+  const normalizedBox = new THREE.Box2().setFromPoints(normalizedOuterPoints)
+  return { contours: normalized, box: normalizedBox }
+}
+
+function getHeartSvgShape(targetWidthMm) {
+  if (!cachedHeartUnitWidthPoints) {
+    cachedHeartUnitWidthPoints = parseLargestSvgShapeUnitWidthPoints(heartSvgRaw, HEART_SVG_SAMPLE_POINTS)
+    if (!cachedHeartUnitWidthPoints) {
       throw new Error('Could not parse a closed heart path from src/assets/heart.svg')
     }
-
-    const box = new THREE.Box2().setFromPoints(bestPoints)
-    const width = box.max.x - box.min.x
-    const centerX = (box.min.x + box.max.x) / 2
-    const centerY = (box.min.y + box.max.y) / 2
-    cachedHeartUnitWidthPoints = bestPoints.map(
-      (point) => new THREE.Vector2((point.x - centerX) / width, (centerY - point.y) / width),
-    )
   }
 
   const scaled = cachedHeartUnitWidthPoints.map(
     (point) => new THREE.Vector2(point.x * targetWidthMm * 1.25, point.y * targetWidthMm),
   )
   return new THREE.Shape(scaled)
+}
+
+function getGiftSvgShape(targetWidthMm) {
+  if (!cachedGiftUnitContours) {
+    cachedGiftUnitContours = parseLargestSvgShapeUnitWidthContours(giftSvgRaw, 200)
+    if (!cachedGiftUnitContours) {
+      throw new Error('Could not parse a closed gift path from src/assets/giftbox.svg')
+    }
+  }
+
+  const scaledOuter = cachedGiftUnitContours.outer.map(
+    (point) => new THREE.Vector2(point.x * targetWidthMm, point.y * targetWidthMm),
+  )
+  const shape = new THREE.Shape(scaledOuter)
+  cachedGiftUnitContours.holes.forEach((holePoints) => {
+    // Slight inset avoids near-touching edges that can create non-manifold bow geometry after extrusion.
+    const insetHolePoints = insetPolygon(holePoints, 0.95)
+    if (polygonArea(insetHolePoints) < 0.0008) return
+    const scaledHole = insetHolePoints.map(
+      (point) => new THREE.Vector2(point.x * targetWidthMm, point.y * targetWidthMm),
+    )
+    if (polygonArea(scaledHole) < 0.3) return
+    shape.holes.push(new THREE.Path(scaledHole))
+  })
+  return shape
+}
+
+function getIceCreamSvgShape(targetWidthMm) {
+  if (!cachedIceCreamUnitContours) {
+    cachedIceCreamUnitContours = parseLargestSvgShapeUnitWidthContours(iceCreamConeSvgRaw, 180)
+    if (!cachedIceCreamUnitContours) {
+      throw new Error('Could not parse a closed ice cream cone path from src/assets/ice-cream-cone.svg')
+    }
+  }
+
+  const scaledOuter = cachedIceCreamUnitContours.outer.map(
+    (point) => new THREE.Vector2(point.x * targetWidthMm, point.y * targetWidthMm),
+  )
+  const shape = new THREE.Shape(scaledOuter)
+  cachedIceCreamUnitContours.holes.forEach((holePoints) => {
+    const scaledHole = holePoints.map(
+      (point) => new THREE.Vector2(point.x * targetWidthMm, point.y * targetWidthMm),
+    )
+    shape.holes.push(new THREE.Path(scaledHole))
+  })
+  return shape
 }
 
 function smoothStarShape(radius) {
@@ -125,6 +368,14 @@ function buildShape(printShape, radius) {
 
   if (printShape === 'star') {
     return smoothStarShape(radius * 0.96)
+  }
+
+  if (printShape === 'gift') {
+    return getGiftSvgShape(radius * 2 * 0.94)
+  }
+
+  if (printShape === 'icecream') {
+    return getIceCreamSvgShape(radius * 2 * 0.94)
   }
 
   const fallback = new THREE.Shape()
@@ -316,6 +567,39 @@ function chooseQrCenter(printShape, polygon, radius) {
     }
     return bestCenter
   }
+  if (printShape === 'gift') {
+    const box = new THREE.Box2().setFromPoints(polygon)
+    const height = box.max.y - box.min.y
+    let bestCenter = { x: 0, y: box.min.y + height * 0.34 }
+    let bestSide = 0
+    const yMin = box.min.y + height * 0.14
+    const yMax = box.min.y + height * 0.56
+    for (let y = yMin; y <= yMax; y += 0.35) {
+      const side = maxCenteredSquareSideAt(polygon, 2.2, 0, y)
+      if (side > bestSide) {
+        bestSide = side
+        bestCenter = { x: 0, y }
+      }
+    }
+    return bestCenter
+  }
+  if (printShape === 'icecream') {
+    const box = new THREE.Box2().setFromPoints(polygon)
+    const height = box.max.y - box.min.y
+    let bestCenter = { x: 0, y: box.min.y + height * 0.62 }
+    let bestSide = 0
+    // Keep QR in the large upper body and away from the narrow cone tip.
+    const yMin = box.min.y + height * 0.45
+    const yMax = box.min.y + height * 0.84
+    for (let y = yMin; y <= yMax; y += 0.35) {
+      const side = maxCenteredSquareSideAt(polygon, 2.2, 0, y)
+      if (side > bestSide) {
+        bestSide = side
+        bestCenter = { x: 0, y }
+      }
+    }
+    return bestCenter
+  }
   return { x: 0, y: 0 }
 }
 
@@ -354,10 +638,15 @@ function getShapePlan(printShape) {
   const shape = buildShape(printShape, radius)
   const polygon = shape.extractPoints(300).shape
   const qrCenter = chooseQrCenter(printShape, polygon, radius)
-  const maxSquare = maxCenteredSquareSideAt(polygon, QR_EDGE_CLEARANCE_MM, qrCenter.x, qrCenter.y)
-  const qrSideMm = Math.max(MIN_QR_SIDE_MM, maxSquare * 0.9)
+  const qrEdgeClearanceMm =
+    printShape === 'gift' || printShape === 'icecream' ? 2.2 : QR_EDGE_CLEARANCE_MM
+  const qrScale = printShape === 'gift' || printShape === 'icecream' ? 0.96 : 0.9
+  const maxSquare = maxCenteredSquareSideAt(polygon, qrEdgeClearanceMm, qrCenter.x, qrCenter.y)
+  const qrSideMm = Math.max(MIN_QR_SIDE_MM, maxSquare * qrScale)
   let holeCenter
-  if (printShape === 'star') {
+  if (printShape === 'gift') {
+    holeCenter = { x: 0, y: 0 }
+  } else if (printShape === 'star') {
     holeCenter = findStarPointHoleCenter(polygon, qrSideMm, qrCenter)
   } else if (printShape === 'heart') {
     holeCenter = findHeartUpperLeftHoleCenter(polygon, qrSideMm, qrCenter)
@@ -373,14 +662,23 @@ function getShapePlan(printShape) {
 }
 
 function getCenteredShapeLayout(printShape) {
+  const cached = centeredLayoutCache.get(printShape)
+  if (cached) {
+    return {
+      ...cached,
+      qrCenter: { ...cached.qrCenter },
+      holeCenter: { ...cached.holeCenter },
+    }
+  }
+
   const { shape, qrSideMm, qrCenter, holeCenter } = getShapePlan(printShape)
-  const points = shape.extractPoints(320).shape
+  const points = shape.extractPoints(LAYOUT_SAMPLE_POINTS).shape
   const box = new THREE.Box2().setFromPoints(points)
   const centerX = (box.min.x + box.max.x) / 2
   const centerY = (box.min.y + box.max.y) / 2
   const widthMm = box.max.x - box.min.x
   const heightMm = box.max.y - box.min.y
-  return {
+  const layout = {
     shape,
     qrSideMm,
     qrCenter: { x: qrCenter.x - centerX, y: qrCenter.y - centerY },
@@ -389,6 +687,12 @@ function getCenteredShapeLayout(printShape) {
     heightMm,
     centerX,
     centerY,
+  }
+  centeredLayoutCache.set(printShape, layout)
+  return {
+    ...layout,
+    qrCenter: { ...layout.qrCenter },
+    holeCenter: { ...layout.holeCenter },
   }
 }
 
@@ -444,50 +748,65 @@ function meshToAsciiStl(mesh) {
   return exporter.parse(mesh, { binary: false })
 }
 
-function createBackTextCutGeometry(widthMm, heightMm) {
-  if (typeof document === 'undefined') return null
-
-  const canvas = document.createElement('canvas')
-  const cols = 96
-  const rows = 52
-  canvas.width = cols
-  canvas.height = rows
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return null
-
-  ctx.clearRect(0, 0, cols, rows)
-  ctx.fillStyle = '#000'
-  ctx.strokeStyle = '#000'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.lineJoin = 'round'
-  ctx.lineCap = 'round'
-  ctx.lineWidth = Math.max(1, Math.floor(rows * 0.06))
-  ctx.font = `900 ${Math.floor(rows * 0.38)}px "Baloo 2", "Nunito", sans-serif`
-  ctx.fillText('burr', cols / 2, rows * 0.33)
-  ctx.fillText('buddy', cols / 2, rows * 0.68)
-  ctx.strokeText('burr', cols / 2, rows * 0.33)
-  ctx.strokeText('buddy', cols / 2, rows * 0.68)
-
-  const image = ctx.getImageData(0, 0, cols, rows).data
-  const geoms = []
-  const textAreaW = widthMm * 0.7
-  const textAreaH = heightMm * 0.34
-  const cellW = textAreaW / cols
-  const cellH = textAreaH / rows
-
-  for (let y = 0; y < rows; y += 1) {
-    for (let x = 0; x < cols; x += 1) {
-      const alpha = image[(y * cols + x) * 4 + 3]
-      if (alpha < 12) continue
-
-      const px = textAreaW / 2 - (x + 0.5) * cellW
-      const py = textAreaH / 2 - (y + 0.5) * cellH
-      const box = new THREE.BoxGeometry(cellW * 1.02, cellH * 1.02, BACK_TEXT_DEBOSS_DEPTH_MM + 0.35)
-      box.translate(px, py, BACK_TEXT_DEBOSS_DEPTH_MM / 2)
-      geoms.push(box)
-    }
+function normalizeCutGeometryForMerge(geometry) {
+  const normalized = geometry.clone()
+  ;['uv', 'uv1', 'uv2', 'tangent', 'color'].forEach((attr) => {
+    if (normalized.getAttribute(attr)) normalized.deleteAttribute(attr)
+  })
+  if (!normalized.index) {
+    const position = normalized.getAttribute('position')
+    if (!position) return normalized
+    const index = Array.from({ length: position.count }, (_, i) => i)
+    normalized.setIndex(index)
   }
+  if (!normalized.getAttribute('normal')) {
+    normalized.computeVertexNormals()
+  }
+  return normalized
+}
+
+function ensureIndexedGeometryInPlace(geometry) {
+  if (geometry.index) return geometry
+  const position = geometry.getAttribute('position')
+  if (!position) return geometry
+  const index = Array.from({ length: position.count }, (_, i) => i)
+  geometry.setIndex(index)
+  return geometry
+}
+
+function createBackTextCutGeometry(widthMm, heightMm) {
+  if (!cachedBackDebossUnitContours) {
+    cachedBackDebossUnitContours = parseDebossUnitContours(burrBuddyDebossSvgRaw, BACK_DEBOSS_SAMPLE_POINTS)
+    if (!cachedBackDebossUnitContours) return null
+  }
+
+  const { contours, box } = cachedBackDebossUnitContours
+  const textAreaW = widthMm * 0.74
+  const textAreaH = heightMm * 0.42
+  const unitHeight = box.max.y - box.min.y
+  const scale = Math.min(textAreaW, textAreaH / Math.max(unitHeight, 1e-6))
+  const geoms = []
+
+  contours.forEach(({ outer, holes }) => {
+    // Mirror on X so back-face deboss reads correctly when viewed from the back.
+    const scaledOuter = outer.map((point) => new THREE.Vector2(-point.x * scale, point.y * scale))
+    if (polygonArea(scaledOuter) < 0.2) return
+
+    const shape = new THREE.Shape(scaledOuter)
+    holes.forEach((hole) => {
+      const scaledHole = hole.map((point) => new THREE.Vector2(-point.x * scale, point.y * scale))
+      if (polygonArea(scaledHole) < 0.05) return
+      shape.holes.push(new THREE.Path(scaledHole))
+    })
+
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: BACK_TEXT_DEBOSS_DEPTH_MM + 0.35,
+      bevelEnabled: false,
+      curveSegments: 12,
+    })
+    geom.translate(0, 0, BACK_TEXT_DEBOSS_DEPTH_MM / 2)
+    geoms.push(geom)
+  })
 
   if (geoms.length === 0) return null
   const merged = mergeGeometries(geoms, false)
@@ -496,51 +815,39 @@ function createBackTextCutGeometry(widthMm, heightMm) {
 }
 
 export function createBackTextOverlayGeometry(printShape = 'circle') {
-  if (typeof document === 'undefined') return null
+  if (!cachedBackDebossUnitContours) {
+    cachedBackDebossUnitContours = parseDebossUnitContours(burrBuddyDebossSvgRaw, BACK_DEBOSS_SAMPLE_POINTS)
+    if (!cachedBackDebossUnitContours) return null
+  }
 
   const { widthMm, heightMm } = getCenteredShapeLayout(printShape)
-  const canvas = document.createElement('canvas')
-  const cols = 96
-  const rows = 52
-  canvas.width = cols
-  canvas.height = rows
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return null
-
-  ctx.clearRect(0, 0, cols, rows)
-  ctx.fillStyle = '#000'
-  ctx.strokeStyle = '#000'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.lineJoin = 'round'
-  ctx.lineCap = 'round'
-  ctx.lineWidth = Math.max(1, Math.floor(rows * 0.06))
-  ctx.font = `900 ${Math.floor(rows * 0.38)}px "Baloo 2", "Nunito", sans-serif`
-  ctx.fillText('burr', cols / 2, rows * 0.33)
-  ctx.fillText('buddy', cols / 2, rows * 0.68)
-  ctx.strokeText('burr', cols / 2, rows * 0.33)
-  ctx.strokeText('buddy', cols / 2, rows * 0.68)
-
-  const image = ctx.getImageData(0, 0, cols, rows).data
-  const geoms = []
-  const textAreaW = widthMm * 0.7
-  const textAreaH = heightMm * 0.34
-  const cellW = textAreaW / cols
-  const cellH = textAreaH / rows
+  const { contours, box } = cachedBackDebossUnitContours
+  const textAreaW = widthMm * 0.74
+  const textAreaH = heightMm * 0.42
+  const unitHeight = box.max.y - box.min.y
+  const scale = Math.min(textAreaW, textAreaH / Math.max(unitHeight, 1e-6))
   const overlayDepth = 0.01
+  const geoms = []
 
-  for (let y = 0; y < rows; y += 1) {
-    for (let x = 0; x < cols; x += 1) {
-      const alpha = image[(y * cols + x) * 4 + 3]
-      if (alpha < 12) continue
+  contours.forEach(({ outer, holes }) => {
+    const scaledOuter = outer.map((point) => new THREE.Vector2(-point.x * scale, point.y * scale))
+    if (polygonArea(scaledOuter) < 0.2) return
+    const shape = new THREE.Shape(scaledOuter)
 
-      const px = textAreaW / 2 - (x + 0.5) * cellW
-      const py = textAreaH / 2 - (y + 0.5) * cellH
-      const box = new THREE.BoxGeometry(cellW * 1.02, cellH * 1.02, overlayDepth)
-      box.translate(px, py, overlayDepth / 2 + 0.003)
-      geoms.push(box)
-    }
-  }
+    holes.forEach((hole) => {
+      const scaledHole = hole.map((point) => new THREE.Vector2(-point.x * scale, point.y * scale))
+      if (polygonArea(scaledHole) < 0.05) return
+      shape.holes.push(new THREE.Path(scaledHole))
+    })
+
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: overlayDepth,
+      bevelEnabled: false,
+      curveSegments: 8,
+    })
+    geom.translate(0, 0, overlayDepth / 2 + 0.003)
+    geoms.push(geom)
+  })
 
   if (geoms.length === 0) return null
   const merged = mergeGeometries(geoms, false)
@@ -586,9 +893,11 @@ export function createQrOverlayGeometry(payload, printShape = 'circle') {
   )
 }
 
-export function generateTokenPlaqueStl(token, printShape = 'circle', qrPayload) {
+export function generateTokenPlaqueStl(token, printShape = 'circle', qrPayload, options = {}) {
+  const includeBackDeboss = options.includeBackDeboss ?? false
   const { geometry: baseGeometry, qrSideMm, holeCenter, qrCenter, widthMm, heightMm } =
     createBaseGeometry(printShape)
+  ensureIndexedGeometryInPlace(baseGeometry)
   const material = new THREE.MeshStandardMaterial()
   const baseMesh = new THREE.Mesh(baseGeometry, material)
 
@@ -606,27 +915,48 @@ export function generateTokenPlaqueStl(token, printShape = 'circle', qrPayload) 
   const cuts = []
   if (qrCut) cuts.push(qrCut)
 
-  const holeGeometry = new THREE.CylinderGeometry(
-    HOLE_RADIUS_MM,
-    HOLE_RADIUS_MM,
-    BASE_THICKNESS_MM + 2,
-    48,
-  )
-  holeGeometry.rotateX(Math.PI / 2)
-  holeGeometry.translate(holeCenter.x, holeCenter.y, BASE_THICKNESS_MM / 2)
-  cuts.push(holeGeometry)
+  if (printShape !== 'gift') {
+    const holeGeometry = new THREE.CylinderGeometry(
+      HOLE_RADIUS_MM,
+      HOLE_RADIUS_MM,
+      BASE_THICKNESS_MM + 4,
+      96,
+    )
+    holeGeometry.rotateX(Math.PI / 2)
+    holeGeometry.translate(holeCenter.x, holeCenter.y, BASE_THICKNESS_MM / 2)
+    cuts.push(holeGeometry)
+  }
 
-  const backTextCut = createBackTextCutGeometry(widthMm, heightMm)
-  if (backTextCut) {
-    cuts.push(backTextCut)
+  if (includeBackDeboss) {
+    const backTextCut = createBackTextCutGeometry(widthMm, heightMm)
+    if (backTextCut) {
+      cuts.push(backTextCut)
+    }
   }
 
   let finalMesh = baseMesh
-  for (const cutGeometry of cuts) {
-    const cutMesh = new THREE.Mesh(cutGeometry, material)
-    finalMesh = CSG.subtract(finalMesh, cutMesh)
-    cutGeometry.dispose()
-    cutMesh.geometry.dispose()
+  if (cuts.length > 0) {
+    for (const cutGeometry of cuts) {
+      const cutReady = normalizeCutGeometryForMerge(cutGeometry)
+      if (!cutReady.getAttribute('normal')) {
+        cutReady.computeVertexNormals()
+      }
+      ensureIndexedGeometryInPlace(cutReady)
+      ensureIndexedGeometryInPlace(finalMesh.geometry)
+      if (!finalMesh.geometry.getAttribute('normal')) {
+        finalMesh.geometry.computeVertexNormals()
+      }
+
+      const cutMesh = new THREE.Mesh(cutReady, material)
+      const nextMesh = CSG.subtract(finalMesh, cutMesh)
+
+      cutMesh.geometry.dispose()
+      cutGeometry.dispose()
+      if (finalMesh !== baseMesh) {
+        finalMesh.geometry.dispose()
+      }
+      finalMesh = nextMesh
+    }
   }
 
   finalMesh.geometry.computeVertexNormals()
