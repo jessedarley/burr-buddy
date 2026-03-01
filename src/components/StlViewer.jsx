@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
-import { createQrOverlayGeometry, generateTokenPlaqueStl } from '../lib/stl'
+import { createFrontLogoOverlayGeometry, createQrOverlayGeometry, generateTokenPlaqueStl } from '../lib/stl'
 
 export function StlViewer({ token, printShape, qrPayload, onReady }) {
   const containerRef = useRef(null)
   const stlContent = useMemo(
-    () => generateTokenPlaqueStl(token, printShape, qrPayload, { includeBackDeboss: false }),
+    () => generateTokenPlaqueStl(token, printShape, qrPayload),
     [token, printShape, qrPayload],
   )
 
@@ -86,6 +86,21 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
     qrOverlay.position.z = 0
     mesh.add(qrOverlay)
 
+    const logoOverlayGeometry = createFrontLogoOverlayGeometry(printShape)
+    const logoOverlayMaterial = new THREE.MeshStandardMaterial({
+      color: '#111111',
+      roughness: 0.92,
+      metalness: 0.0,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    })
+    if (logoOverlayGeometry) {
+      const logoOverlay = new THREE.Mesh(logoOverlayGeometry, logoOverlayMaterial)
+      logoOverlay.position.z = 0
+      mesh.add(logoOverlay)
+    }
+
     onReady?.()
 
     let frameId = 0
@@ -113,6 +128,8 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
       material.dispose()
       qrOverlayGeometry.dispose()
       qrOverlayMaterial.dispose()
+      if (logoOverlayGeometry) logoOverlayGeometry.dispose()
+      logoOverlayMaterial.dispose()
       renderer.dispose()
     }
   }, [onReady, printShape, qrPayload, stlContent, token])

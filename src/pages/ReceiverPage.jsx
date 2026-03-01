@@ -20,9 +20,15 @@ export function ReceiverPage() {
       setError('')
       try {
         const response = await fetch(`/api/message?token=${encodeURIComponent(token)}`)
-        const payload = await response.json()
+        const responseText = await response.text()
+        let payload = {}
+        try {
+          payload = responseText ? JSON.parse(responseText) : {}
+        } catch {
+          payload = {}
+        }
         if (!response.ok) {
-          throw new Error(payload.error || 'Unable to load this message.')
+          throw new Error(payload.error || `Unable to load this message (HTTP ${response.status}).`)
         }
         if (mounted) setMessageData(payload)
       } catch (err) {
@@ -55,9 +61,15 @@ export function ReceiverPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, reply }),
       })
-      const payload = await response.json()
+      const responseText = await response.text()
+      let payload = {}
+      try {
+        payload = responseText ? JSON.parse(responseText) : {}
+      } catch {
+        payload = {}
+      }
       if (!response.ok) {
-        throw new Error(payload.error || 'Could not submit reply.')
+        throw new Error(payload.error || `Could not submit reply (HTTP ${response.status}).`)
       }
       setSubmitState('Reply sent.')
       setReply('')

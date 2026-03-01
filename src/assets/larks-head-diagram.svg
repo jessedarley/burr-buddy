@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360" role="img" aria-label="How to attach tag with a rubber band using a girth hitch">
+  <defs>
+    <style>
+      .bg { fill: #fffaf0; }
+      .panel { fill: #ffffff; stroke: #d7c5eb; stroke-width: 2; }
+      .title { fill: #2d2440; font: 700 20px 'Nunito', Arial, sans-serif; }
+      .step { fill: #5f5370; font: 700 16px 'Nunito', Arial, sans-serif; }
+      .text { fill: #5f5370; font: 600 14px 'Nunito', Arial, sans-serif; }
+      .tag { fill: #f1f2f4; stroke: #8f98a8; stroke-width: 2; }
+      .hole { fill: #ffffff; stroke: #8f98a8; stroke-width: 2; }
+      .clip { fill: none; stroke: #2d2440; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+      .band { fill: none; stroke: #ff35c8; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+      .arrow { fill: none; stroke: #c71f9b; stroke-width: 3; marker-end: url(#arrowHead); }
+    </style>
+    <marker id="arrowHead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#c71f9b" />
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="360" />
+  <text class="title" x="30" y="36">Attach tag to a safety pin or binder clip with a rubber band</text>
+
+  <rect class="panel" x="20" y="58" width="292" height="280" rx="14" />
+  <rect class="panel" x="334" y="58" width="292" height="280" rx="14" />
+  <rect class="panel" x="648" y="58" width="292" height="280" rx="14" />
+
+  <text class="step" x="38" y="92">1. Loop band through tag hole</text>
+  <path class="tag" d="M70 130 h170 a18 18 0 0 1 18 18 v132 a18 18 0 0 1 -18 18 h-170 a18 18 0 0 1 -18 -18 v-132 a18 18 0 0 1 18 -18 z" />
+  <circle class="hole" cx="155" cy="156" r="12" />
+  <path class="band" d="M155 112 c-22 0 -22 40 0 40 c22 0 22 40 0 40" />
+  <path class="arrow" d="M252 155 h38" />
+  <text class="text" x="38" y="322">Use a small elastic or loom band.</text>
+
+  <text class="step" x="352" y="92">2. Fold and pass ends through loop</text>
+  <path class="clip" d="M464 126 l0 146 m18 -128 l0 112 m-18 -112 c24 0 36 18 36 38" />
+  <path class="band" d="M420 196 c20 -38 68 -38 88 0 c-20 38 -68 38 -88 0 z" />
+  <path class="band" d="M464 232 c-16 0 -24 -18 -24 -36" />
+  <path class="band" d="M464 232 c16 0 24 -18 24 -36" />
+  <path class="arrow" d="M545 197 h56" />
+  <text class="text" x="352" y="322">This makes the girth hitch.</text>
+
+  <text class="step" x="666" y="92">3. Pull snug</text>
+  <path class="tag" d="M678 150 h124 a14 14 0 0 1 14 14 v108 a14 14 0 0 1 -14 14 h-124 a14 14 0 0 1 -14 -14 v-108 a14 14 0 0 1 14 -14 z" />
+  <circle class="hole" cx="740" cy="170" r="10" />
+  <path class="clip" d="M848 120 l0 150 m16 -130 l0 114 m-16 -114 c22 0 32 16 32 34" />
+  <path class="band" d="M740 170 c28 8 56 24 76 50 c16 -16 22 -36 30 -54" />
+  <path class="band" d="M740 170 c18 14 30 28 38 42 c-6 8 -14 16 -23 22" />
+  <text class="text" x="666" y="322">Now clip to clothing, a bag, or a card.</text>
+</svg>
