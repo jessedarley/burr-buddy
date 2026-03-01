@@ -11,6 +11,7 @@ export function ReceiverPage() {
   const [reply, setReply] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitState, setSubmitState] = useState('')
+  const [submittedReply, setSubmittedReply] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -72,7 +73,7 @@ export function ReceiverPage() {
         throw new Error(payload.error || `Could not submit reply (HTTP ${response.status}).`)
       }
       setSubmitState('Reply sent.')
-      setReply('')
+      setSubmittedReply(reply)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -98,6 +99,7 @@ export function ReceiverPage() {
               <h2 className="section-title">Step 1: Read</h2>
               <p className="meta">3D Print Shape</p>
               <p className="token-url">{getPrintShapeLabel(messageData.printShape)}</p>
+              <p className="meta">Original Message</p>
               <div className="sender-message">{messageData.senderMessage}</div>
             </section>
 
@@ -117,6 +119,12 @@ export function ReceiverPage() {
                   {isSubmitting ? 'Sending Reply...' : 'Send Reply'}
                 </button>
               </form>
+              {submittedReply ? (
+                <>
+                  <p className="meta">Your Reply</p>
+                  <div className="sender-message">{submittedReply}</div>
+                </>
+              ) : null}
             </section>
             {submitState ? <div className="message success">Reply delivered. You are all set.</div> : null}
           </>
