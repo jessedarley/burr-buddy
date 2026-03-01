@@ -23,14 +23,10 @@ export default async function handler(req, res) {
     if (!record) {
       return json(res, 404, { error: 'Message not found.' })
     }
-    if (record.receiverReply) {
-      return json(res, 409, { error: 'A reply has already been submitted for this token.' })
-    }
-
     const repliedAt = new Date().toISOString()
     const changes = await markReply(token, reply, repliedAt)
     if (changes === 0) {
-      return json(res, 409, { error: 'A reply has already been submitted for this token.' })
+      return json(res, 404, { error: 'Message not found.' })
     }
 
     let emailStatus = 'skipped'

@@ -175,8 +175,13 @@ export async function markReply(token, reply, repliedAt) {
   if (pg) {
     const rows = await pg`
       UPDATE messages
-      SET "receiverReply" = ${reply}, "repliedAt" = ${repliedAt}
-      WHERE "token" = ${token} AND "receiverReply" IS NULL
+      SET
+        "receiverReply" = CASE
+          WHEN "receiverReply" IS NULL OR "receiverReply" = '' THEN ${reply}
+          ELSE "receiverReply" || E'\n' || ${reply}
+        END,
+        "repliedAt" = ${repliedAt}
+      WHERE "token" = ${token}
       RETURNING "token"
     `
     return rows.length
@@ -185,19 +190,27 @@ export async function markReply(token, reply, repliedAt) {
   const database = getDb()
   if (!database) {
     const existing = memoryStore.get(token)
-    if (!existing || existing.receiverReply) return 0
+    if (!existing) return 0
     memoryStore.set(token, {
       ...existing,
-      receiverReply: reply,
+      receiverReply:
+        !existing.receiverReply || !`${existing.receiverReply}`.trim()
+          ? reply
+          : `${existing.receiverReply}\n${reply}`,
       repliedAt,
     })
     return 1
   }
   const statement = database.prepare(`
     UPDATE messages
-    SET receiverReply = ?, repliedAt = ?
-    WHERE token = ? AND receiverReply IS NULL
+    SET
+      receiverReply = CASE
+        WHEN receiverReply IS NULL OR receiverReply = '' THEN ?
+        ELSE receiverReply || char(10) || ?
+      END,
+      repliedAt = ?
+    WHERE token = ?
   `)
-  const result = statement.run(reply, repliedAt, token)
+  const result = statement.run(reply, reply, repliedAt, token)
   return result.changes || 0
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { BrandHeader } from '../components/BrandHeader'
-import { getPrintShapeLabel } from '../lib/printShapes'
 
 export function ReceiverPage() {
   const { token } = useParams()
@@ -11,7 +10,7 @@ export function ReceiverPage() {
   const [reply, setReply] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitState, setSubmitState] = useState('')
-  const [submittedReply, setSubmittedReply] = useState('')
+  const [replyHistory, setReplyHistory] = useState([])
 
   useEffect(() => {
     let mounted = true
@@ -31,7 +30,14 @@ export function ReceiverPage() {
         if (!response.ok) {
           throw new Error(payload.error || `Unable to load this message (HTTP ${response.status}).`)
         }
-        if (mounted) setMessageData(payload)
+        if (mounted) {
+          setMessageData(payload)
+          const existingReplies = `${payload.receiverReply || ''}`
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean)
+          setReplyHistory(existingReplies)
+        }
       } catch (err) {
         if (mounted) setError(err.message)
       } finally {
@@ -73,7 +79,8 @@ export function ReceiverPage() {
         throw new Error(payload.error || `Could not submit reply (HTTP ${response.status}).`)
       }
       setSubmitState('Reply sent.')
-      setSubmittedReply(reply)
+      setReplyHistory((prev) => [...prev, reply.trim()])
+      setReply('')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -97,8 +104,6 @@ export function ReceiverPage() {
           <>
             <section className="section-card">
               <h2 className="section-title">Step 1: Read</h2>
-              <p className="meta">3D Print Shape</p>
-              <p className="token-url">{getPrintShapeLabel(messageData.printShape)}</p>
               <p className="meta">Original Message</p>
               <div className="sender-message">{messageData.senderMessage}</div>
             </section>
@@ -119,10 +124,10 @@ export function ReceiverPage() {
                   {isSubmitting ? 'Sending Reply...' : 'Send Reply'}
                 </button>
               </form>
-              {submittedReply ? (
+              {replyHistory.length > 0 ? (
                 <>
                   <p className="meta">Your Reply</p>
-                  <div className="sender-message">{submittedReply}</div>
+                  <div className="sender-message">{replyHistory.join('\n')}</div>
                 </>
               ) : null}
             </section>

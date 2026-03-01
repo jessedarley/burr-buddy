@@ -20,6 +20,7 @@ export default async function handler(req, res) {
     token: record.token,
     printShape: record.emoji,
     senderMessage: record.senderMessage,
+    receiverReply: record.receiverReply || '',
     createdAt: record.createdAt,
     repliedAt: record.repliedAt,
   })
