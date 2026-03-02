@@ -96,7 +96,7 @@ export function ReceiverPage() {
   return (
     <main className="page">
       <div className="container panel">
-        <BrandHeader />
+        <BrandHeader aboutHref="/about" showStartLink startLinkNewTab />
         <section className="hero">
           <h1 className="hero-title">Your Secret Message (Shh!)</h1>
         </section>

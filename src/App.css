@@ -85,6 +85,14 @@
   text-underline-offset: 3px;
 }
 
+.brand-links {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .hero {
   margin-top: 0.85rem;
   margin-bottom: 1rem;
