@@ -12,7 +12,7 @@ export function BrandHeader({
       </a>
       <div className="brand-links">
         <a className="brand-link" href={aboutHref}>
-          about
+          About
         </a>
         {showStartLink ? (
           <a
