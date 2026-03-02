@@ -11,6 +11,12 @@ export function ReceiverPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitState, setSubmitState] = useState('')
   const [replyHistory, setReplyHistory] = useState([])
+  const combinedMessages = [
+    messageData?.senderMessage?.trim() || '',
+    ...replyHistory,
+  ]
+    .filter(Boolean)
+    .join('\n')
 
   useEffect(() => {
     let mounted = true
@@ -103,16 +109,14 @@ export function ReceiverPage() {
         {messageData ? (
           <>
             <section className="section-card">
-              <h2 className="section-title">Step 1: Read</h2>
-              <p className="meta">Original Message</p>
-              <div className="sender-message">{messageData.senderMessage}</div>
+              <h2 className="section-title">Messages</h2>
+              <div className="sender-message">{combinedMessages}</div>
             </section>
 
             <section className="section-card">
-              <h2 className="section-title">Step 2: Reply</h2>
+              <h2 className="section-title">Add a message</h2>
               <form onSubmit={handleSubmit}>
                 <div className="field">
-                  <label htmlFor="reply">Your Reply</label>
                   <textarea
                     id="reply"
                     value={reply}
@@ -124,12 +128,6 @@ export function ReceiverPage() {
                   {isSubmitting ? 'Sending Reply...' : 'Send Reply'}
                 </button>
               </form>
-              {replyHistory.length > 0 ? (
-                <>
-                  <p className="meta">Your Reply</p>
-                  <div className="sender-message">{replyHistory.join('\n')}</div>
-                </>
-              ) : null}
             </section>
             {submitState ? <div className="message success">Reply delivered. You are all set.</div> : null}
           </>
