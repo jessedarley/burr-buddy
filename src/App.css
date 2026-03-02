@@ -204,6 +204,7 @@ button:disabled {
   font-size: 0.78rem;
   line-height: 1.25;
   color: var(--muted);
+  text-align: center;
   word-break: break-all;
 }
 
@@ -321,6 +322,17 @@ button:disabled {
   border-radius: 12px;
   border: 1px solid #d7c5eb;
   background: #fff;
+  white-space: pre-wrap;
+}
+
+.thread-divider {
+  border: 0;
+  border-top: 1px solid #d7c5eb;
+  margin: 0.6rem 0;
+}
+
+.thread-text {
+  margin: 0;
   white-space: pre-wrap;
 }
 

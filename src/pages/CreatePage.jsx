@@ -212,11 +212,11 @@ export function CreatePage() {
               <button
                 type="button"
                 className="btn btn-secondary"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(shareUrl)
+                onClick={() => {
+                  window.open(shareUrl, '_blank', 'noopener,noreferrer')
                 }}
               >
-                Copy Receiver URL
+                Open Messenger
               </button>
               <p className="action-note">{typeableUrl}</p>
             </div>
@@ -250,7 +250,7 @@ export function CreatePage() {
                   })
                 }}
               >
-                Start New Message
+                Start New Burr Buddy
               </button>
             </div>
           </div>

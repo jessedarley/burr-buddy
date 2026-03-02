@@ -16,7 +16,6 @@ export function ReceiverPage() {
     ...replyHistory,
   ]
     .filter(Boolean)
-    .join('\n')
 
   useEffect(() => {
     let mounted = true
@@ -84,7 +83,7 @@ export function ReceiverPage() {
       if (!response.ok) {
         throw new Error(payload.error || `Could not submit reply (HTTP ${response.status}).`)
       }
-      setSubmitState('Reply sent.')
+      setSubmitState('message added')
       setReplyHistory((prev) => [...prev, reply.trim()])
       setReply('')
     } catch (err) {
@@ -100,7 +99,6 @@ export function ReceiverPage() {
         <BrandHeader />
         <section className="hero">
           <h1 className="hero-title">Your Secret Message (Shh!)</h1>
-          <p className="hero-lead">Read your note below, then leave a reply for the sender.</p>
         </section>
 
         {isLoading ? <p className="status">Loading...</p> : null}
@@ -110,7 +108,14 @@ export function ReceiverPage() {
           <>
             <section className="section-card">
               <h2 className="section-title">Messages</h2>
-              <div className="sender-message">{combinedMessages}</div>
+              <div className="sender-message">
+                {combinedMessages.map((message, index) => (
+                  <div key={`${index}-${message.slice(0, 24)}`} className="thread-message">
+                    {index > 0 ? <hr className="thread-divider" /> : null}
+                    <p className="thread-text">{message}</p>
+                  </div>
+                ))}
+              </div>
             </section>
 
             <section className="section-card">
@@ -129,7 +134,7 @@ export function ReceiverPage() {
                 </button>
               </form>
             </section>
-            {submitState ? <div className="message success">Reply delivered. You are all set.</div> : null}
+            {submitState ? <div className="message success">message added</div> : null}
           </>
         ) : null}
       </div>
