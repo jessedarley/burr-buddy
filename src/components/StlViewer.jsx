@@ -16,6 +16,7 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
     if (!container) return undefined
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+    renderer.setClearColor(0x000000, 0)
     renderer.setPixelRatio(window.devicePixelRatio || 1)
     renderer.setSize(container.clientWidth, 320)
     container.innerHTML = ''
@@ -58,6 +59,9 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
       color: '#ffffff',
       metalness: 0.04,
       roughness: 0.62,
+      transparent: false,
+      opacity: 1,
+      side: THREE.DoubleSide,
     })
 
     const mesh = new THREE.Mesh(geometry, material)
@@ -78,6 +82,9 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
       color: '#111111',
       roughness: 0.92,
       metalness: 0.0,
+      transparent: false,
+      opacity: 1,
+      side: THREE.DoubleSide,
       polygonOffset: true,
       polygonOffsetFactor: -1,
       polygonOffsetUnits: -1,
@@ -93,6 +100,9 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
       color: '#111111',
       roughness: 0.92,
       metalness: 0.0,
+      transparent: false,
+      opacity: 1,
+      side: THREE.DoubleSide,
       polygonOffset: true,
       polygonOffsetFactor: -1,
       polygonOffsetUnits: -1,

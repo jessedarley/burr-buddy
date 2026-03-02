@@ -11,6 +11,8 @@
   --accent-alt: #2d2440;
   --success: #0f8b4c;
   --error: #b32648;
+  --brand-title-size: 1.45rem;
+  --hero-title-size: clamp(2rem, 4vw, 2.65rem);
 }
 
 * {
@@ -51,8 +53,9 @@
 }
 
 .brand-logo {
-  width: 116px;
-  height: 116px;
+  height: calc(var(--hero-title-size) * 2);
+  width: auto;
+  max-width: 100%;
   object-fit: contain;
 }
 
@@ -60,7 +63,7 @@
   margin: 0;
   font-family: 'Baloo 2', 'Nunito', sans-serif;
   font-weight: 800;
-  font-size: 1.45rem;
+  font-size: var(--brand-title-size);
   line-height: 1;
 }
 
@@ -90,7 +93,7 @@
 .hero-title {
   margin: 0;
   font-family: 'Baloo 2', 'Nunito', sans-serif;
-  font-size: clamp(2rem, 4vw, 2.65rem);
+  font-size: var(--hero-title-size);
   line-height: 1;
   letter-spacing: 0.01em;
 }
@@ -247,13 +250,38 @@ button:disabled {
   margin: 0.7rem 0 0;
 }
 
-.about-figure img {
+.about-figure-note {
+  margin: 0.1rem 0 0.7rem;
+  font-weight: 700;
+}
+
+.about-scenario-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.about-scenario {
+  background: #fff;
+  border: 1px solid #d7c5eb;
+  border-radius: 12px;
+  padding: 0.45rem;
+}
+
+.about-scenario img {
   width: 100%;
   height: auto;
   display: block;
-  border: 1px solid #d7c5eb;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #fff;
+}
+
+.about-scenario-label {
+  margin: 0.4rem 0 0.15rem;
+  text-align: center;
+  color: var(--accent-alt);
+  font-size: 0.9rem;
+  font-weight: 800;
 }
 
 .stl-viewer {
@@ -262,7 +290,11 @@ button:disabled {
   border: 1px solid #d7c5eb;
   border-radius: 12px;
   overflow: hidden;
-  background: linear-gradient(135deg, #ff00cc 0%, #b7ff00 100%);
+  background-color: color-mix(in srgb, var(--bg-b) 84%, white 16%);
+  background-image:
+    radial-gradient(circle at 25px 25px, color-mix(in srgb, var(--bg-a) 86%, white 14%) 0 18px, transparent 19px),
+    radial-gradient(circle at 75px 75px, color-mix(in srgb, var(--bg-a) 86%, white 14%) 0 18px, transparent 19px);
+  background-size: 100px 100px;
 }
 
 .message {
@@ -301,9 +333,17 @@ button:disabled {
   .url-grid {
     grid-template-columns: 1fr;
   }
+
+  .about-scenario-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 600px) {
+  :root {
+    --hero-title-size: 1.8rem;
+  }
+
   .page {
     padding: 0.85rem 0.65rem 1.4rem;
   }
@@ -314,11 +354,9 @@ button:disabled {
   }
 
   .brand-logo {
-    width: 48px;
-    height: 48px;
+    height: auto;
+    width: 92%;
+    max-width: 92%;
   }
 
-  .hero-title {
-    font-size: 1.8rem;
-  }
 }

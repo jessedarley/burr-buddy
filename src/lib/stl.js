@@ -167,7 +167,7 @@ function parseCircleLayout() {
       entry !== baseEntry &&
       entry !== squareEntry &&
       entry.hasGeometryShapes &&
-      (entry.isBlackFill || entry.parentNodeName === 'g'),
+      entry.nodeName === 'path',
   )
 
   const baseBox = baseEntry.bounds
