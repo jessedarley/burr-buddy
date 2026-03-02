@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
-import { createFrontLogoOverlayGeometry, createQrOverlayGeometry, generateTokenPlaqueStl } from '../lib/stl'
+import { createQrOverlayGeometry, createTextOverlayGeometry, generateTokenPlaqueStl } from '../lib/stl'
 
 export function StlViewer({ token, printShape, qrPayload, onReady }) {
   const containerRef = useRef(null)
@@ -73,7 +73,7 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
 
     scene.add(mesh)
 
-    const qrOverlayGeometry = createQrOverlayGeometry(qrPayload || token, printShape)
+    const qrOverlayGeometry = createQrOverlayGeometry(qrPayload || token)
     const qrOverlayMaterial = new THREE.MeshStandardMaterial({
       color: '#111111',
       roughness: 0.92,
@@ -82,12 +82,14 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
       polygonOffsetFactor: -1,
       polygonOffsetUnits: -1,
     })
-    const qrOverlay = new THREE.Mesh(qrOverlayGeometry, qrOverlayMaterial)
-    qrOverlay.position.z = 0
-    mesh.add(qrOverlay)
+    if (qrOverlayGeometry) {
+      const qrOverlay = new THREE.Mesh(qrOverlayGeometry, qrOverlayMaterial)
+      qrOverlay.position.z = 0
+      mesh.add(qrOverlay)
+    }
 
-    const logoOverlayGeometry = createFrontLogoOverlayGeometry(printShape)
-    const logoOverlayMaterial = new THREE.MeshStandardMaterial({
+    const textOverlayGeometry = createTextOverlayGeometry()
+    const textOverlayMaterial = new THREE.MeshStandardMaterial({
       color: '#111111',
       roughness: 0.92,
       metalness: 0.0,
@@ -95,10 +97,10 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
       polygonOffsetFactor: -1,
       polygonOffsetUnits: -1,
     })
-    if (logoOverlayGeometry) {
-      const logoOverlay = new THREE.Mesh(logoOverlayGeometry, logoOverlayMaterial)
-      logoOverlay.position.z = 0
-      mesh.add(logoOverlay)
+    if (textOverlayGeometry) {
+      const textOverlay = new THREE.Mesh(textOverlayGeometry, textOverlayMaterial)
+      textOverlay.position.z = 0
+      mesh.add(textOverlay)
     }
 
     onReady?.()
@@ -126,10 +128,10 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
       controls.dispose()
       geometry.dispose()
       material.dispose()
-      qrOverlayGeometry.dispose()
+      if (qrOverlayGeometry) qrOverlayGeometry.dispose()
       qrOverlayMaterial.dispose()
-      if (logoOverlayGeometry) logoOverlayGeometry.dispose()
-      logoOverlayMaterial.dispose()
+      if (textOverlayGeometry) textOverlayGeometry.dispose()
+      textOverlayMaterial.dispose()
       renderer.dispose()
     }
   }, [onReady, printShape, qrPayload, stlContent, token])

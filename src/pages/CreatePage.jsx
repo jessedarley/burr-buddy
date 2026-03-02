@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { BrandHeader } from '../components/BrandHeader'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import { PRINT_SHAPE_OPTIONS } from '../lib/printShapes'
 import larksHeadDiagram from '../assets/larks-head-diagram.svg'
 
@@ -130,14 +131,16 @@ export function CreatePage() {
                 ))}
               </select>
             </div>
-            <Suspense fallback={<p className="status">Loading STL preview...</p>}>
-              <StlViewer
-                token={createdToken}
-                printShape={createdShape}
-                qrPayload={qrPayloadUrl}
-                onReady={() => setIsStlReady(true)}
-              />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<p className="status">Loading STL preview...</p>}>
+                <StlViewer
+                  token={createdToken}
+                  printShape={createdShape}
+                  qrPayload={qrPayloadUrl}
+                  onReady={() => setIsStlReady(true)}
+                />
+              </Suspense>
+            </ErrorBoundary>
             <p className="note">Drag to rotate and scroll to zoom.</p>
           </section>
 
@@ -302,3 +305,4 @@ export function CreatePage() {
     </main>
   )
 }
+
