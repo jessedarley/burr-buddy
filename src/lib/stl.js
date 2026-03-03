@@ -10,7 +10,8 @@ import giftSvgRaw from '../assets/Burr Buddy Shapes_Gift.svg?raw'
 import heartSvgRaw from '../assets/Burr Buddy Shapes_Heart.svg?raw'
 import starSvgRaw from '../assets/Burr Buddy Shapes_Star.svg?raw'
 
-const TARGET_WIDTH_MM = 50.8
+const SVG_UNITS_PER_INCH = 72
+const MM_PER_SVG_UNIT = 25.4 / SVG_UNITS_PER_INCH
 const BASE_THICKNESS_MM = 3.175
 const EMBOSS_HEIGHT_MM = 0.7
 const QR_SIDE_MM = 25.4
@@ -192,7 +193,7 @@ function parseShapeLayout(printShape = 'circle') {
   const baseBox = baseEntry.bounds
   const baseWidthSvg = baseBox.max.x - baseBox.min.x
   const baseHeightSvg = baseBox.max.y - baseBox.min.y
-  const mmPerSvgUnit = TARGET_WIDTH_MM / baseWidthSvg
+  const mmPerSvgUnit = MM_PER_SVG_UNIT
 
   const squareBox = squareEntry.bounds
   const baseCenterX = (baseBox.min.x + baseBox.max.x) / 2
@@ -302,7 +303,7 @@ function createTextEmbossGeometry(printShape, depth, zBase) {
 
 function createFallbackBaseGeometry() {
   const shape = new THREE.Shape()
-  shape.absarc(0, 0, TARGET_WIDTH_MM / 2, 0, Math.PI * 2, false)
+  shape.absarc(0, 0, 25.4, 0, Math.PI * 2, false)
   return new THREE.ExtrudeGeometry(shape, {
     depth: BASE_THICKNESS_MM,
     bevelEnabled: false,
