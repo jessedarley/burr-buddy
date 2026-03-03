@@ -77,7 +77,7 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
 
     scene.add(mesh)
 
-    const qrOverlayGeometry = createQrOverlayGeometry(qrPayload || token)
+    const qrOverlayGeometry = createQrOverlayGeometry(qrPayload || token, printShape)
     const qrOverlayMaterial = new THREE.MeshStandardMaterial({
       color: '#111111',
       roughness: 0.92,
@@ -95,7 +95,7 @@ export function StlViewer({ token, printShape, qrPayload, onReady }) {
       mesh.add(qrOverlay)
     }
 
-    const textOverlayGeometry = createTextOverlayGeometry()
+    const textOverlayGeometry = createTextOverlayGeometry(printShape)
     const textOverlayMaterial = new THREE.MeshStandardMaterial({
       color: '#111111',
       roughness: 0.92,

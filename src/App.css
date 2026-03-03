@@ -23,10 +23,10 @@
   min-height: 100vh;
   color: var(--ink);
   font-family: 'Nunito', 'Segoe UI', sans-serif;
-  background:
-    radial-gradient(circle at 14% 12%, rgba(255, 255, 255, 0.26), transparent 42%),
-    radial-gradient(circle at 82% 6%, rgba(255, 255, 255, 0.22), transparent 45%),
-    linear-gradient(135deg, var(--bg-a) 0%, var(--bg-b) 60%, var(--bg-c) 100%);
+  background-image: url('./assets/Background.svg');
+  background-repeat: repeat;
+  background-position: top left;
+  background-size: auto;
   padding: 1.25rem 1rem 2rem;
 }
 
@@ -98,6 +98,14 @@
   margin-bottom: 1rem;
 }
 
+.hero-centered {
+  text-align: center;
+}
+
+.hero-centered .hero-lead {
+  margin: 0.5rem auto 0;
+}
+
 .hero-title {
   margin: 0;
   font-family: 'Baloo 2', 'Nunito', sans-serif;
@@ -119,6 +127,23 @@
   border-radius: 16px;
   padding: 0.95rem;
   margin-bottom: 0.9rem;
+}
+
+.compose-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: 1fr;
+}
+
+.compose-grid .section-card {
+  margin-bottom: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.compose-grid .field {
+  flex: 1;
 }
 
 .section-title {
@@ -356,6 +381,13 @@ button:disabled {
 
   .about-scenario-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 860px) {
+  .compose-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
   }
 }
 

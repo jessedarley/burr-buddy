@@ -3,7 +3,12 @@ import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js'
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import qrcode from 'qrcode-generator'
-import circleSvgRaw from '../assets/Circle.svg?raw'
+import circleSvgRaw from '../assets/Burr Buddy Shapes_Circle.svg?raw'
+import coneSvgRaw from '../assets/Burr Buddy Shapes_Cone.svg?raw'
+import bubbleSvgRaw from '../assets/Burr Buddy Shapes_Bubble.svg?raw'
+import giftSvgRaw from '../assets/Burr Buddy Shapes_Gift.svg?raw'
+import heartSvgRaw from '../assets/Burr Buddy Shapes_Heart.svg?raw'
+import starSvgRaw from '../assets/Burr Buddy Shapes_Star.svg?raw'
 
 const TARGET_WIDTH_MM = 50.8
 const BASE_THICKNESS_MM = 3.175
@@ -16,7 +21,16 @@ const CURVE_SEGMENTS = 24
 const STL_CACHE_MAX = 24
 const QR_CACHE_MAX = 128
 
-let cachedLayout = null
+const SHAPE_SVG_RAW = {
+  circle: circleSvgRaw,
+  cone: coneSvgRaw,
+  bubble: bubbleSvgRaw,
+  gift: giftSvgRaw,
+  heart: heartSvgRaw,
+  star: starSvgRaw,
+}
+
+const layoutCache = new Map()
 const stlCache = new Map()
 const qrCache = new Map()
 
@@ -60,6 +74,10 @@ function valueIsNone(value) {
   return value === 'none'
 }
 
+function normalizeShape(printShape = 'circle') {
+  return SHAPE_SVG_RAW[printShape] ? printShape : 'circle'
+}
+
 function getShapeBounds(shapes) {
   const points = []
   shapes.forEach((shape) => {
@@ -90,11 +108,13 @@ function transformGeometryToBaseSpace(geometry, baseBox, mmPerSvgUnit) {
   geometry.scale(mmPerSvgUnit, -mmPerSvgUnit, 1)
 }
 
-function parseCircleLayout() {
+function parseShapeLayout(printShape = 'circle') {
+  const shapeKey = normalizeShape(printShape)
+  const cachedLayout = layoutCache.get(shapeKey)
   if (cachedLayout) return cachedLayout
 
   const loader = new SVGLoader()
-  const data = loader.parse(circleSvgRaw)
+  const data = loader.parse(SHAPE_SVG_RAW[shapeKey])
 
   const entries = data.paths
     .map((path) => {
@@ -129,7 +149,6 @@ function parseCircleLayout() {
         nodeId: nodeAttr(node, 'id').toLowerCase(),
         fillColor: fill,
         strokeColor: stroke,
-        parentNodeName: node?.parentNode?.nodeName?.toLowerCase?.() || '',
       }
     })
     .filter(Boolean)
@@ -144,7 +163,7 @@ function parseCircleLayout() {
     entries.filter(isLikelyBase).sort((a, b) => b.area - a.area)[0] ||
     entries.filter((entry) => entry.hasGeometryShapes).sort((a, b) => b.area - a.area)[0]
 
-  if (!baseEntry) throw new Error('Circle.svg base shape unavailable')
+  if (!baseEntry) throw new Error(`${shapeKey} SVG base shape unavailable`)
 
   const squareEntry =
     entries.find((entry) => entry.nodeName === 'rect' && entry.nodeId === 'qr-box') ||
@@ -160,7 +179,7 @@ function parseCircleLayout() {
     entries.find((entry) => entry.nodeName === 'rect') ||
     entries.find((entry) => entry.isBlackStroke && !entry.hasFill)
 
-  if (!squareEntry) throw new Error('Circle.svg QR square unavailable')
+  if (!squareEntry) throw new Error(`${shapeKey} SVG QR square unavailable`)
 
   const textEntries = entries.filter(
     (entry) =>
@@ -183,7 +202,7 @@ function parseCircleLayout() {
     y: (squareBox.min.y + squareBox.max.y) / 2,
   }
 
-  cachedLayout = {
+  const layout = {
     baseShapes: baseEntry.shapes,
     textShapes: textEntries.flatMap((entry) => entry.shapes),
     baseBox,
@@ -196,7 +215,8 @@ function parseCircleLayout() {
     },
   }
 
-  return cachedLayout
+  layoutCache.set(shapeKey, layout)
+  return layout
 }
 
 function mergeGeometryList(geometries) {
@@ -257,8 +277,8 @@ function createQrEmbossGeometry(payload, zBase, depth, center = { x: 0, y: 0 }) 
   return mergeGeometryList(moduleGeometries)
 }
 
-function createTextEmbossGeometry(depth, zBase) {
-  const { textShapes, baseBox, mmPerSvgUnit } = parseCircleLayout()
+function createTextEmbossGeometry(printShape, depth, zBase) {
+  const { textShapes, baseBox, mmPerSvgUnit } = parseShapeLayout(printShape)
   if (textShapes.length === 0) return null
 
   const textGeometries = []
@@ -290,8 +310,8 @@ function createFallbackBaseGeometry() {
   })
 }
 
-function createBaseGeometry() {
-  const { baseShapes, baseBox, mmPerSvgUnit } = parseCircleLayout()
+function createBaseGeometry(printShape) {
+  const { baseShapes, baseBox, mmPerSvgUnit } = parseShapeLayout(printShape)
   const geometry = new THREE.ExtrudeGeometry(baseShapes, {
     depth: BASE_THICKNESS_MM,
     bevelEnabled: false,
@@ -318,9 +338,9 @@ function generateFallbackStl(payload) {
   return stl
 }
 
-export function getPrintSizeInches() {
+export function getPrintSizeInches(printShape = 'circle') {
   try {
-    const { widthMm, heightMm } = parseCircleLayout()
+    const { widthMm, heightMm } = parseShapeLayout(printShape)
     const mmToIn = 1 / 25.4
     return {
       widthIn: Number((widthMm * mmToIn).toFixed(2)),
@@ -332,9 +352,9 @@ export function getPrintSizeInches() {
   }
 }
 
-export function createQrOverlayGeometry(payload) {
+export function createQrOverlayGeometry(payload, printShape = 'circle') {
   try {
-    const { qrCenterMm } = parseCircleLayout()
+    const { qrCenterMm } = parseShapeLayout(printShape)
     return createQrEmbossGeometry(
       payload,
       BASE_THICKNESS_MM + EMBOSS_HEIGHT_MM + OVERLAY_Z_OFFSET_MM,
@@ -351,9 +371,10 @@ export function createQrOverlayGeometry(payload) {
   }
 }
 
-export function createTextOverlayGeometry() {
+export function createTextOverlayGeometry(printShape = 'circle') {
   try {
     return createTextEmbossGeometry(
+      printShape,
       OVERLAY_HEIGHT_MM,
       BASE_THICKNESS_MM + EMBOSS_HEIGHT_MM + OVERLAY_Z_OFFSET_MM,
     )
@@ -362,18 +383,19 @@ export function createTextOverlayGeometry() {
   }
 }
 
-export function generateTokenPlaqueStl(token, _printShape = 'circle', qrPayload) {
+export function generateTokenPlaqueStl(token, printShape = 'circle', qrPayload) {
+  const shapeKey = normalizeShape(printShape)
   const payload = qrPayload || token
-  const cacheKey = `circle|${token}|${payload}`
+  const cacheKey = `${shapeKey}|${token}|${payload}`
   const cached = stlCache.get(cacheKey)
   if (cached) return cached
 
   let stl
   try {
-    const { qrCenterMm } = parseCircleLayout()
-    const baseGeometry = createBaseGeometry()
+    const { qrCenterMm } = parseShapeLayout(shapeKey)
+    const baseGeometry = createBaseGeometry(shapeKey)
     const qrGeometry = createQrEmbossGeometry(payload, BASE_THICKNESS_MM, EMBOSS_HEIGHT_MM, qrCenterMm)
-    const textGeometry = createTextEmbossGeometry(EMBOSS_HEIGHT_MM, BASE_THICKNESS_MM)
+    const textGeometry = createTextEmbossGeometry(shapeKey, EMBOSS_HEIGHT_MM, BASE_THICKNESS_MM)
 
     const mergedGeometry = mergeGeometryList([baseGeometry, qrGeometry, textGeometry].filter(Boolean))
     if (!mergedGeometry) throw new Error('Primary STL merge failed')
@@ -396,12 +418,13 @@ export function generateTokenPlaqueStl(token, _printShape = 'circle', qrPayload)
 }
 
 export function downloadTokenPlaqueStl(token, printShape = 'circle', qrPayload) {
-  const stl = generateTokenPlaqueStl(token, printShape, qrPayload)
+  const shapeKey = normalizeShape(printShape)
+  const stl = generateTokenPlaqueStl(token, shapeKey, qrPayload)
   const blob = new Blob([stl], { type: 'model/stl' })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = `burr-buddy-circle-${token}.stl`
+  anchor.download = `burr-buddy-${shapeKey}-${token}.stl`
   document.body.appendChild(anchor)
   anchor.click()
   document.body.removeChild(anchor)

@@ -106,12 +106,12 @@ export function CreatePage() {
       <main className="page">
         <div className="container panel">
           <BrandHeader />
-          <section className="hero">
+          <section className="hero hero-centered">
             <h1 className="hero-title">
               {isStlReady ? 'Your Burr Buddy is ready' : 'We are making your STL file'}
             </h1>
             <p className="hero-lead">
-              Confirm the shape and download the STL for 3D printing.
+              Confirm the shape and download the STL for 3D printing
             </p>
           </section>
 
@@ -205,53 +205,54 @@ export function CreatePage() {
     <main className="page">
       <div className="container panel">
         <BrandHeader />
-        <section className="hero">
-          <h1 className="hero-title">Write Your Secret Message</h1>
+        <section className="hero hero-centered">
           <p className="hero-lead">
-            Compose a note, pick a print shape, and generate a shareable link plus printable STL.
+            Compose a note, pick a print shape, and generate a shareable link plus printable STL
           </p>
         </section>
 
         {error ? <div className="message error">{error}</div> : null}
 
         <form onSubmit={handleSubmit}>
-          <section className="section-card">
-            <h2 className="section-title">Step 1: Message</h2>
-            <div className="field">
-              <label htmlFor="senderMessage">Message</label>
-              <textarea
-                id="senderMessage"
-                value={formData.senderMessage}
-                onChange={(event) =>
-                  setFormData((prev) => ({ ...prev, senderMessage: event.target.value }))
-                }
-                required
-              />
-            </div>
-          </section>
+          <div className="compose-grid">
+            <section className="section-card">
+              <h2 className="section-title">Step 1: Compose your message</h2>
+              <div className="field">
+                <label htmlFor="senderMessage">Message</label>
+                <textarea
+                  id="senderMessage"
+                  value={formData.senderMessage}
+                  onChange={(event) =>
+                    setFormData((prev) => ({ ...prev, senderMessage: event.target.value }))
+                  }
+                  required
+                />
+              </div>
+            </section>
 
-          <section className="section-card">
-            <h2 className="section-title">Step 2: 3D Print Shape</h2>
-            <div className="field">
-              <label htmlFor="printShape">Shape</label>
-              <select
-                id="printShape"
-                value={formData.printShape}
-                onChange={(event) =>
-                  setFormData((prev) => ({ ...prev, printShape: event.target.value }))
-                }
-              >
-                {PRINT_SHAPE_OPTIONS.map((shape) => (
-                  <option key={shape.value} value={shape.value}>
-                    {shape.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </section>
+            <section className="section-card">
+              <h2 className="section-title">Step 2: Pick a Shape</h2>
+              <div className="field">
+                <label htmlFor="printShape">Shape</label>
+                <select
+                  id="printShape"
+                  value={formData.printShape}
+                  onChange={(event) =>
+                    setFormData((prev) => ({ ...prev, printShape: event.target.value }))
+                  }
+                >
+                  {PRINT_SHAPE_OPTIONS.map((shape) => (
+                    <option key={shape.value} value={shape.value}>
+                      {shape.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </section>
+          </div>
 
           <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-            {isSubmitting ? 'Generating Link...' : 'Generate Link + STL Preview'}
+            {isSubmitting ? 'Generating Link...' : 'Make my Burr Buddy'}
           </button>
         </form>
 
