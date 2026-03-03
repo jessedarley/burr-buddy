@@ -1,13 +1,13 @@
 :root {
-  --bg-a: #ff35c8;
+  --bg-a: #ec008c;
   --bg-b: #baff26;
   --bg-c: #fff4a8;
   --panel: #ffffff;
   --ink: #181322;
   --muted: #5f5370;
   --line: #eadcf6;
-  --accent: #ff35c8;
-  --accent-strong: #c71f9b;
+  --accent: #ec008c;
+  --accent-strong: #ec008c;
   --accent-alt: #2d2440;
   --success: #0f8b4c;
   --error: #b32648;
@@ -193,12 +193,12 @@ textarea {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #ff35c8 0%, #ff59cf 100%);
+  background: linear-gradient(135deg, #ec008c 0%, #ec008c 100%);
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #e729b4 0%, #ff4bc8 100%);
+  background: linear-gradient(135deg, #ec008c 0%, #ec008c 100%);
 }
 
 .btn-primary:disabled {
