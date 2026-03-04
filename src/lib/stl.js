@@ -5,7 +5,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import qrcode from 'qrcode-generator'
 import circleSvgRaw from '../assets/Burr Buddy Shapes_Circle.svg?raw'
 import squareSvgRaw from '../assets/Burr Buddy Shapes_Square.svg?raw'
-import coneSvgRaw from '../assets/Burr Buddy Shapes - Ice Cream.svg?raw'
+import coneSvgRaw from '../assets/Burr Buddy Shapes_Ice Cream.svg?raw'
 import bubbleSvgRaw from '../assets/Burr Buddy Shapes_Bubble.svg?raw'
 import giftSvgRaw from '../assets/Burr Buddy Shapes_Gift.svg?raw'
 import heartSvgRaw from '../assets/Burr Buddy Shapes_Heart.svg?raw'

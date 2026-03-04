@@ -278,6 +278,7 @@ button:disabled {
   margin: 0.5rem 0 0;
   color: var(--muted);
   line-height: 1.45;
+  font-size: 0.8rem;
 }
 
 .about-figure {
@@ -287,6 +288,91 @@ button:disabled {
 .about-figure-note {
   margin: 0.1rem 0 0.7rem;
   font-weight: 700;
+}
+
+.about-subtitle {
+  margin: 0 0 0.6rem;
+  font-family: 'Baloo 2', 'Nunito', sans-serif;
+  font-size: 1.1rem;
+  color: var(--accent-alt);
+}
+
+.about-printing-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.about-printing-step {
+  background: #fff;
+  border: 1px solid #d7c5eb;
+  border-radius: 12px;
+  padding: 0.45rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.about-printing-step .about-scenario-label {
+  font-size: 0.55rem;
+}
+
+.about-printing-step-paired {
+  grid-column: span 2;
+}
+
+.about-printing-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
+}
+
+.about-printing-image-placeholder {
+  width: 100%;
+  height: clamp(130px, 14vw, 220px);
+  display: grid;
+  place-items: center;
+  border: 1px dashed #cfb8e8;
+  border-radius: 16px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.45rem;
+  background: #fff;
+}
+
+.about-printing-image {
+  width: 100%;
+  height: clamp(130px, 14vw, 220px);
+  display: block;
+  object-fit: cover;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.about-clipping-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.about-clipping-card {
+  background: #fff;
+  border: 1px solid #d7c5eb;
+  border-radius: 12px;
+  padding: 0.45rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.about-bullet-list {
+  margin: 0.45rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.about-bullet-list .about-text {
+  margin-top: 0.35rem;
 }
 
 .about-scenario-grid {
@@ -379,8 +465,30 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .about-printing-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .about-printing-step-paired {
+    grid-column: span 2;
+  }
+
   .about-scenario-grid {
     grid-template-columns: 1fr;
+  }
+
+  .about-clipping-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-printing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-printing-step-paired {
+    grid-column: span 1;
   }
 }
 

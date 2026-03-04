@@ -2,6 +2,8 @@ import logo from '../assets/logo.png'
 
 export function BrandHeader({
   aboutHref = '#about',
+  extraLinkHref = '',
+  extraLinkLabel = '',
   showStartLink = false,
   startLinkNewTab = false,
 }) {
@@ -14,6 +16,11 @@ export function BrandHeader({
         <a className="brand-link" href={aboutHref}>
           About
         </a>
+        {extraLinkHref && extraLinkLabel ? (
+          <a className="brand-link" href={extraLinkHref}>
+            {extraLinkLabel}
+          </a>
+        ) : null}
         {showStartLink ? (
           <a
             className="brand-link"

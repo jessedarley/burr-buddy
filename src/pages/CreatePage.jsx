@@ -105,7 +105,7 @@ export function CreatePage() {
     return (
       <main className="page">
         <div className="container panel">
-          <BrandHeader />
+          <BrandHeader extraLinkHref="#instructions" extraLinkLabel="Instructions" />
           <section className="hero hero-centered">
             <h1 className="hero-title">
               {isStlReady ? 'Your Burr Buddy is ready' : 'We are making your STL file'}
@@ -204,7 +204,7 @@ export function CreatePage() {
   return (
     <main className="page">
       <div className="container panel">
-        <BrandHeader />
+        <BrandHeader extraLinkHref="#instructions" extraLinkLabel="Instructions" />
         <section className="hero hero-centered">
           <p className="hero-lead">
             Compose a note, pick a print shape, and generate a shareable link plus printable STL
