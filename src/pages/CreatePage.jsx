@@ -251,7 +251,7 @@ export function CreatePage() {
             </section>
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+          <button type="submit" className="btn btn-primary create-submit-btn" disabled={isSubmitting}>
             {isSubmitting ? 'Generating Link...' : 'Make my Burr Buddy'}
           </button>
         </form>

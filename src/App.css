@@ -146,6 +146,10 @@
   flex: 1;
 }
 
+.create-submit-btn {
+  margin-top: 0.85rem;
+}
+
 .section-title {
   margin: 0 0 0.7rem;
   font-family: 'Baloo 2', 'Nunito', sans-serif;
