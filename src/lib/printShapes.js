@@ -1,6 +1,6 @@
 export const PRINT_SHAPE_OPTIONS = [
   { value: 'circle', label: 'Circle' },
-  { value: 'cone', label: 'Ice Cream Cone' },
+  { value: 'cone', label: 'Ice Cream' },
   { value: 'bubble', label: 'Speech Bubble' },
   { value: 'gift', label: 'Gift Box' },
   { value: 'heart', label: 'Heart' },
