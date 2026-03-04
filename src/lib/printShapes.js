@@ -1,4 +1,5 @@
 export const PRINT_SHAPE_OPTIONS = [
+  { value: 'square', label: 'Square' },
   { value: 'circle', label: 'Circle' },
   { value: 'cone', label: 'Ice Cream' },
   { value: 'bubble', label: 'Speech Bubble' },

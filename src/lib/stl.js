@@ -4,6 +4,7 @@ import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import qrcode from 'qrcode-generator'
 import circleSvgRaw from '../assets/Burr Buddy Shapes_Circle.svg?raw'
+import squareSvgRaw from '../assets/Burr Buddy Shapes_Square.svg?raw'
 import coneSvgRaw from '../assets/Burr Buddy Shapes - Ice Cream.svg?raw'
 import bubbleSvgRaw from '../assets/Burr Buddy Shapes_Bubble.svg?raw'
 import giftSvgRaw from '../assets/Burr Buddy Shapes_Gift.svg?raw'
@@ -23,6 +24,7 @@ const STL_CACHE_MAX = 24
 const QR_CACHE_MAX = 128
 
 const SHAPE_SVG_RAW = {
+  square: squareSvgRaw,
   circle: circleSvgRaw,
   cone: coneSvgRaw,
   bubble: bubbleSvgRaw,
@@ -120,8 +122,20 @@ function parseShapeLayout(printShape = 'circle') {
   const entries = data.paths
     .map((path) => {
       const node = path?.userData?.node || null
+      const fill = styleValue(path, 'fill')
+      const stroke = styleValue(path, 'stroke')
+      const hasFill = !valueIsNone(fill)
+      const hasStroke = !valueIsNone(stroke)
+      const isPathNode = (node?.nodeName || '') === 'path'
+
+      // Some assets use stroke-only closed paths for the base silhouette.
+      // If fill-based extraction returns nothing, fall back to ShapePath conversion.
+      let shapes = SVGLoader.createShapes(path)
+      if (shapes.length === 0 && isPathNode && hasStroke && !hasFill && typeof path.toShapes === 'function') {
+        shapes = path.toShapes(true)
+      }
+
       const rectBounds = parseRectBoundsFromNode(node)
-      const shapes = SVGLoader.createShapes(path)
       const shapeBounds = getShapeBounds(shapes)
       const bounds = rectBounds || shapeBounds
       if (!bounds) return null
@@ -129,10 +143,6 @@ function parseShapeLayout(printShape = 'circle') {
       const width = bounds.max.x - bounds.min.x
       const height = bounds.max.y - bounds.min.y
       const area = width * height
-      const fill = styleValue(path, 'fill')
-      const stroke = styleValue(path, 'stroke')
-      const hasFill = !valueIsNone(fill)
-      const hasStroke = !valueIsNone(stroke)
 
       return {
         path,

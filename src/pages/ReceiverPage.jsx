@@ -9,6 +9,7 @@ export function ReceiverPage() {
   const [messageData, setMessageData] = useState(null)
   const [reply, setReply] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
   const [submitState, setSubmitState] = useState('')
   const [replyHistory, setReplyHistory] = useState([])
   const combinedMessages = [
@@ -93,6 +94,36 @@ export function ReceiverPage() {
     }
   }
 
+  async function handleClearMessages() {
+    setSubmitState('')
+    setError('')
+    setIsClearing(true)
+    try {
+      const response = await fetch('/api/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      })
+      const responseText = await response.text()
+      let payload = {}
+      try {
+        payload = responseText ? JSON.parse(responseText) : {}
+      } catch {
+        payload = {}
+      }
+      if (!response.ok) {
+        throw new Error(payload.error || `Could not clear messages (HTTP ${response.status}).`)
+      }
+      setReplyHistory([])
+      setReply('')
+      setSubmitState('messages cleared')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsClearing(false)
+    }
+  }
+
   return (
     <main className="page">
       <div className="container panel">
@@ -116,6 +147,16 @@ export function ReceiverPage() {
                   </div>
                 ))}
               </div>
+              <div className="action-row" style={{ marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary action-item"
+                  onClick={handleClearMessages}
+                  disabled={isClearing || isSubmitting}
+                >
+                  {isClearing ? 'Clearing...' : 'Clear messages'}
+                </button>
+              </div>
             </section>
 
             <section className="section-card">
@@ -134,7 +175,7 @@ export function ReceiverPage() {
                 </button>
               </form>
             </section>
-            {submitState ? <div className="message success">message added</div> : null}
+            {submitState ? <div className="message success">{submitState}</div> : null}
           </>
         ) : null}
       </div>

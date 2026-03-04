@@ -214,3 +214,45 @@ export async function markReply(token, reply, repliedAt) {
   const result = statement.run(reply, reply, repliedAt, token)
   return result.changes || 0
 }
+
+export async function clearReplies(token) {
+  const pg = await getPostgresClient()
+  if (pg) {
+    const rows = await pg`
+      UPDATE messages
+      SET
+        "senderEmail" = '',
+        "senderMessage" = '',
+        "receiverReply" = NULL,
+        "repliedAt" = NULL
+      WHERE "token" = ${token}
+      RETURNING "token"
+    `
+    return rows.length
+  }
+
+  const database = getDb()
+  if (!database) {
+    const existing = memoryStore.get(token)
+    if (!existing) return 0
+    memoryStore.set(token, {
+      ...existing,
+      senderEmail: '',
+      senderMessage: '',
+      receiverReply: null,
+      repliedAt: null,
+    })
+    return 1
+  }
+  const statement = database.prepare(`
+    UPDATE messages
+    SET
+      senderEmail = '',
+      senderMessage = '',
+      receiverReply = NULL,
+      repliedAt = NULL
+    WHERE token = ?
+  `)
+  const result = statement.run(token)
+  return result.changes || 0
+}
