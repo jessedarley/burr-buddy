@@ -63,8 +63,10 @@ export function ReceiverPage() {
     }
   }, [token])
 
-  async function handleSubmit(event) {
-    event.preventDefault()
+  async function submitReply() {
+    const trimmedReply = reply.trim()
+    if (!trimmedReply || isSubmitting || isClearing) return
+
     setSubmitState('')
     setError('')
     setIsSubmitting(true)
@@ -72,7 +74,7 @@ export function ReceiverPage() {
       const response = await fetch('/api/reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, reply }),
+        body: JSON.stringify({ token, reply: trimmedReply }),
       })
       const responseText = await response.text()
       let payload = {}
@@ -85,12 +87,24 @@ export function ReceiverPage() {
         throw new Error(payload.error || `Could not submit reply (HTTP ${response.status}).`)
       }
       setSubmitState('message added')
-      setReplyHistory((prev) => [...prev, reply.trim()])
+      setReplyHistory((prev) => [...prev, trimmedReply])
       setReply('')
     } catch (err) {
       setError(err.message)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    await submitReply()
+  }
+
+  async function handleReplyKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      await submitReply()
     }
   }
 
@@ -114,6 +128,7 @@ export function ReceiverPage() {
       if (!response.ok) {
         throw new Error(payload.error || `Could not clear messages (HTTP ${response.status}).`)
       }
+      setMessageData((prev) => (prev ? { ...prev, senderMessage: '', receiverReply: '', repliedAt: null } : prev))
       setReplyHistory([])
       setReply('')
       setSubmitState('messages cleared')
@@ -140,12 +155,16 @@ export function ReceiverPage() {
             <section className="section-card">
               <h2 className="section-title">Messages</h2>
               <div className="sender-message">
-                {combinedMessages.map((message, index) => (
-                  <div key={`${index}-${message.slice(0, 24)}`} className="thread-message">
-                    {index > 0 ? <hr className="thread-divider" /> : null}
-                    <p className="thread-text">{message}</p>
-                  </div>
-                ))}
+                {combinedMessages.length === 0 ? (
+                  <p className="thread-text">No messages yet.</p>
+                ) : (
+                  combinedMessages.map((message, index) => (
+                    <div key={`${index}-${message.slice(0, 24)}`} className="thread-message">
+                      {index > 0 ? <hr className="thread-divider" /> : null}
+                      <p className="thread-text">{message}</p>
+                    </div>
+                  ))
+                )}
               </div>
               <div className="action-row" style={{ marginTop: '0.75rem' }}>
                 <button
@@ -167,12 +186,11 @@ export function ReceiverPage() {
                     id="reply"
                     value={reply}
                     onChange={(event) => setReply(event.target.value)}
+                    onKeyDown={handleReplyKeyDown}
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                  {isSubmitting ? 'Sending Reply...' : 'Send Reply'}
-                </button>
+                <p className="note">Press Return to add message. Use Shift+Return for a new line.</p>
               </form>
             </section>
             {submitState ? <div className="message success">{submitState}</div> : null}
