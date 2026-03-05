@@ -1,11 +1,12 @@
-import printingStep1Image from '../assets/Photos/Bambu.JPEG'
-import printingStep2Image from '../assets/Photos/Sharpie.JPEG'
-import printingStep3Image from '../assets/Photos/Sharpie Done.JPEG'
-import printingStep4Image from '../assets/Photos/Putting onto clip.JPEG'
-import printingStep5Image from '../assets/Photos/On Clip.JPEG'
-import clippingStep1Image from '../assets/Photos/On Pocket.JPEG'
-import clippingStep2Image from '../assets/Photos/On hem.JPEG'
-import clippingStep3Image from '../assets/Photos/On Backpack.JPEG'
+import printingStep1Image from '../assets/Photos/01-Bambu.JPEG'
+import printingStep2Image from '../assets/Photos/02-Sharpie.JPEG'
+import printingStep3Image from '../assets/Photos/03-Sharpie.JPEG'
+import printingStep4Image from '../assets/Photos/04-BinderClip.JPEG'
+import printingStep5Image from '../assets/Photos/05-BinderClip.JPEG'
+import clippingStep1Image from '../assets/Photos/06-Clothes.JPEG'
+import clippingStep2Image from '../assets/Photos/07-Backpack.JPEG'
+import clippingStep3Image from '../assets/Photos/08-NoBinderClip.JPEG'
+import faviconImage from '../assets/favicon.png'
 
 export function AboutContent() {
   const printingAssemblySteps = [
@@ -46,45 +47,22 @@ export function AboutContent() {
     {
       src: clippingStep1Image,
       alt: 'Burr Buddy clipped to the edge of a coat or pocket',
-      caption: 'Clip it to a pocket',
+      caption: 'Clip it to clothing (hem, pocket, etc)',
     },
     {
       src: clippingStep2Image,
       alt: 'Burr Buddy clipped onto a pocket',
-      caption: 'Clip it to the edge of a coat or shirt',
+      caption: 'Clip it to a backpack, bag or water bottle',
     },
     {
       src: clippingStep3Image,
       alt: 'Burr Buddy clipped to a purse or backpack',
-      caption: 'or clip it to a purse or backpack',
+      caption: 'Slide it onto a strap or loop directly (no binder clip)',
     },
   ]
 
   return (
     <>
-      <p className="about-text">
-        Once upon a time, along a narrow path through tall pines and whispering grasses, there was a small woodland secret called Burr Buddy.
-      </p>
-      <p className="about-text">
-        If you have ever walked through the woods, you know how tiny burrs cling quietly to your socks or the hem of your coat. You do not notice them arriving &mdash; only later do you discover the small passenger.
-      </p>
-      <p className="about-text">A Burr Buddy works much the same way.</p>
-      <p className="about-text">
-        First, write a secret message &mdash; short or long, silly or sincere. Choose a shape for the tag: a circle, star, heart, hexagon, or another small charm. The message becomes a printable tag marked with a QR code &mdash; a tiny doorway hidden in plain sight.
-      </p>
-      <p className="about-text">
-        Print the tag, then quietly fasten it to someone&apos;s world. Clip it to a backpack, slip it into a pocket, or tuck it into a locker. Like a burr on a woodland walk, it simply appears.
-      </p>
-      <p className="about-text">
-        When it is found, the code can be scanned to reveal the hidden message, and a reply can be sent back through the same little doorway.
-      </p>
-      <p className="about-text">
-        A tiny print.
-        <br />
-        A hidden note.
-        <br />
-        A quiet passenger from the woods.
-      </p>
       <figure className="about-figure" id="instructions">
         <h3 className="about-subtitle">Printing and Attaching to Binder Clip</h3>
         <div className="about-printing-grid">
@@ -144,6 +122,37 @@ export function AboutContent() {
           </li>
         </ul>
       </section>
+      <section className="about-figure">
+        <h3 className="about-subtitle" id="about-story">About</h3>
+        <p className="about-text">
+          Once upon a time, along a narrow path through tall pines and whispering grasses, there was a small woodland secret called Burr Buddy.
+        </p>
+        <p className="about-text">
+          If you have ever walked through the woods, you know how tiny burrs cling quietly to your socks or the hem of your coat. You do not notice them arriving &mdash; only later do you discover the small passenger.
+        </p>
+        <p className="about-text">A Burr Buddy works much the same way.</p>
+        <p className="about-text">
+          First, write a secret message &mdash; short or long, silly or sincere. Choose a shape for the tag: a circle, star, heart, hexagon, or another small charm. The message becomes a printable tag marked with a QR code &mdash; a tiny doorway hidden in plain sight.
+        </p>
+        <p className="about-text">
+          Print the tag, then quietly fasten it to someone&apos;s world. Clip it to a backpack, slip it into a pocket, or tuck it into a locker. Like a burr on a woodland walk, it simply appears.
+        </p>
+        <p className="about-text">
+          When it is found, the code can be scanned to reveal the hidden message, and a reply can be sent back through the same little doorway.
+        </p>
+        <p className="about-text">
+          A tiny print.
+          <br />
+          A hidden note.
+          <br />
+          A quiet passenger from the woods.
+        </p>
+      </section>
+      <div className="about-favicon-row" aria-hidden="true">
+        <img className="about-favicon" src={faviconImage} alt="" />
+        <img className="about-favicon" src={faviconImage} alt="" />
+        <img className="about-favicon" src={faviconImage} alt="" />
+      </div>
     </>
   )
 }

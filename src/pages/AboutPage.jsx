@@ -7,7 +7,6 @@ export function AboutPage() {
       <div className="container panel">
         <BrandHeader aboutHref="/about" showStartLink />
         <section className="section-card about-card" id="about">
-          <h1 className="section-title">About</h1>
           <AboutContent />
         </section>
       </div>

@@ -193,7 +193,6 @@ export function CreatePage() {
           </div>
 
           <section id="about" className="section-card about-card">
-            <h2 className="section-title">About</h2>
             <AboutContent />
           </section>
         </div>
@@ -257,7 +256,6 @@ export function CreatePage() {
         </form>
 
         <section id="about" className="section-card about-card">
-          <h2 className="section-title">About</h2>
           <AboutContent />
         </section>
       </div>

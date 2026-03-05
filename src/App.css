@@ -333,7 +333,8 @@ button:disabled {
 
 .about-printing-image-placeholder {
   width: 100%;
-  height: clamp(130px, 14vw, 220px);
+  aspect-ratio: 1 / 1;
+  height: auto;
   display: grid;
   place-items: center;
   border: 1px dashed #cfb8e8;
@@ -348,7 +349,8 @@ button:disabled {
 
 .about-printing-image {
   width: 100%;
-  height: clamp(130px, 14vw, 220px);
+  aspect-ratio: 1 / 1;
+  height: auto;
   display: block;
   object-fit: cover;
   border-radius: 16px;
@@ -406,6 +408,20 @@ button:disabled {
   color: var(--accent-alt);
   font-size: 0.9rem;
   font-weight: 800;
+}
+
+.about-favicon-row {
+  margin: 1rem 0 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.about-favicon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
 }
 
 .stl-viewer {

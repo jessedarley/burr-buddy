@@ -1,7 +1,7 @@
 import logo from '../assets/logo.png'
 
 export function BrandHeader({
-  aboutHref = '#about',
+  aboutHref = '#about-story',
   extraLinkHref = '',
   extraLinkLabel = '',
   showStartLink = false,
@@ -13,14 +13,14 @@ export function BrandHeader({
         <img className="brand-logo" src={logo} alt="Burr Buddy logo" />
       </a>
       <div className="brand-links">
-        <a className="brand-link" href={aboutHref}>
-          About
-        </a>
         {extraLinkHref && extraLinkLabel ? (
           <a className="brand-link" href={extraLinkHref}>
             {extraLinkLabel}
           </a>
         ) : null}
+        <a className="brand-link" href={aboutHref}>
+          About
+        </a>
         {showStartLink ? (
           <a
             className="brand-link"
