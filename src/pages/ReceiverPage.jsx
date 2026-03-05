@@ -7,6 +7,7 @@ export function ReceiverPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [messageData, setMessageData] = useState(null)
+  const [isEmptyBurrBuddy, setIsEmptyBurrBuddy] = useState(false)
   const [reply, setReply] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
@@ -24,6 +25,7 @@ export function ReceiverPage() {
     async function loadMessage() {
       setIsLoading(true)
       setError('')
+      setIsEmptyBurrBuddy(false)
       try {
         const response = await fetch(`/api/message?token=${encodeURIComponent(token)}`)
         const responseText = await response.text()
@@ -34,10 +36,25 @@ export function ReceiverPage() {
           payload = {}
         }
         if (!response.ok) {
+          if (response.status === 404) {
+            if (mounted) {
+              setMessageData({
+                token,
+                senderMessage: '',
+                receiverReply: '',
+                createdAt: null,
+                repliedAt: null,
+              })
+              setReplyHistory([])
+              setIsEmptyBurrBuddy(true)
+            }
+            return
+          }
           throw new Error(payload.error || `Unable to load this message (HTTP ${response.status}).`)
         }
         if (mounted) {
           setMessageData(payload)
+          setIsEmptyBurrBuddy(false)
           const existingReplies = `${payload.receiverReply || ''}`
             .split('\n')
             .map((line) => line.trim())
@@ -187,6 +204,7 @@ export function ReceiverPage() {
                     value={reply}
                     onChange={(event) => setReply(event.target.value)}
                     onKeyDown={handleReplyKeyDown}
+                    placeholder={isEmptyBurrBuddy ? 'empty burr buddy - add a message' : ''}
                     required
                   />
                 </div>

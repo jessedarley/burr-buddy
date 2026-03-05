@@ -1,4 +1,4 @@
-import { getMessageRecordByToken, markReply } from './_lib/db.js'
+import { getMessageRecordByToken, insertMessageRecord, markReply } from './_lib/db.js'
 import { json, readJsonBody } from './_lib/http.js'
 import { sendReplyEmail } from './_lib/email.js'
 
@@ -19,9 +19,23 @@ export default async function handler(req, res) {
       return json(res, 400, { error: 'reply is required.' })
     }
 
-    const record = await getMessageRecordByToken(token)
+    let record = await getMessageRecordByToken(token)
     if (!record) {
-      return json(res, 404, { error: 'Message not found.' })
+      try {
+        await insertMessageRecord({
+          token,
+          senderEmail: '',
+          senderMessage: '',
+          emoji: 'circle',
+          createdAt: new Date().toISOString(),
+        })
+      } catch {
+        // A concurrent request may have created the row first.
+      }
+      record = await getMessageRecordByToken(token)
+      if (!record) {
+        return json(res, 404, { error: 'Message not found.' })
+      }
     }
     const repliedAt = new Date().toISOString()
     const changes = await markReply(token, reply, repliedAt)
