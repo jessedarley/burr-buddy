@@ -7,7 +7,6 @@ export function ReceiverPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [messageData, setMessageData] = useState(null)
-  const [isEmptyBurrBuddy, setIsEmptyBurrBuddy] = useState(false)
   const [reply, setReply] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
@@ -25,7 +24,6 @@ export function ReceiverPage() {
     async function loadMessage() {
       setIsLoading(true)
       setError('')
-      setIsEmptyBurrBuddy(false)
       try {
         const response = await fetch(`/api/message?token=${encodeURIComponent(token)}`)
         const responseText = await response.text()
@@ -46,7 +44,6 @@ export function ReceiverPage() {
                 repliedAt: null,
               })
               setReplyHistory([])
-              setIsEmptyBurrBuddy(true)
             }
             return
           }
@@ -54,7 +51,6 @@ export function ReceiverPage() {
         }
         if (mounted) {
           setMessageData(payload)
-          setIsEmptyBurrBuddy(false)
           const existingReplies = `${payload.receiverReply || ''}`
             .split('\n')
             .map((line) => line.trim())
@@ -173,7 +169,7 @@ export function ReceiverPage() {
               <h2 className="section-title">Messages</h2>
               <div className="sender-message">
                 {combinedMessages.length === 0 ? (
-                  <p className="thread-text">No messages yet.</p>
+                  <p className="thread-text">add a message below</p>
                 ) : (
                   combinedMessages.map((message, index) => (
                     <div key={`${index}-${message.slice(0, 24)}`} className="thread-message">
@@ -204,7 +200,6 @@ export function ReceiverPage() {
                     value={reply}
                     onChange={(event) => setReply(event.target.value)}
                     onKeyDown={handleReplyKeyDown}
-                    placeholder={isEmptyBurrBuddy ? 'empty burr buddy - add a message' : ''}
                     required
                   />
                 </div>
